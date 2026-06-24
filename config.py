@@ -30,3 +30,7 @@ class Config:
 
     # Upload de imagens: tamanho máximo 10 MB.
     MAX_CONTENT_LENGTH = 10 * 1024 * 1024
+
+    # Token para importação de notícias pelo buscador (defina no .env do servidor).
+    # Se ficar vazio, a importação fica desativada (endpoint recusa).
+    IMPORT_TOKEN = os.environ.get("IMPORT_TOKEN", "")

@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block titulo %}Importação concluída{% endblock %}
+
+{% block conteudo %}
+<div class="vazio" style="padding:50px;">
+    <h2 style="color:var(--azul);">Importação concluída</h2>
+    <p><strong>{{ criadas }}</strong> notícia(s) importada(s) como
+       <strong>rascunho</strong>.
+       {% if ignoradas %}<br>{{ ignoradas }} já existia(m) e foi(ram) ignorada(s).{% endif %}
+    </p>
+    <p>Elas ainda <strong>não estão publicadas</strong>. Revise e publique em
+       "Notícias" no painel.</p>
+    <a class="btn" href="{{ url_for('admin_noticias') }}">Ir para Notícias (painel)</a>
+</div>
+{% endblock %}

@@ -542,6 +542,71 @@ def create_app(config_class=Config):
 
         return render_template("admin/conta.html")
 
+    # -------------------------------------------------------------------
+    # IMPORTAÇÃO (recebe itens do buscador → cria notícias como RASCUNHO)
+    # -------------------------------------------------------------------
+    @app.route("/importar", methods=["POST"])
+    def importar():
+        token = request.form.get("token", "")
+        esperado = app.config.get("IMPORT_TOKEN", "")
+        if not esperado or token != esperado:
+            abort(403)
+
+        titulos = request.form.getlist("titulo")
+        links = request.form.getlist("link")
+        resumos = request.form.getlist("resumo")
+        fontes = request.form.getlist("fonte")
+
+        criadas = 0
+        ignoradas = 0
+        for i, titulo in enumerate(titulos):
+            titulo = (titulo or "").strip()
+            if not titulo:
+                continue
+            link = (links[i] if i < len(links) else "").strip()
+            resumo = (resumos[i] if i < len(resumos) else "").strip()
+            fonte = (fontes[i] if i < len(fontes) else "").strip()
+
+            # Evita duplicar: mesmo título ou mesmo link já importado.
+            existe = None
+            if link:
+                existe = Noticia.query.filter(
+                    or_(Noticia.titulo == titulo, Noticia.conteudo.ilike(f"%{link}%"))
+                ).first()
+            else:
+                existe = Noticia.query.filter_by(titulo=titulo).first()
+            if existe:
+                ignoradas += 1
+                continue
+
+            partes = []
+            if resumo:
+                partes.append(f"<p>{resumo}</p>")
+            if link:
+                rotulo = fonte or link
+                partes.append(
+                    f'<p>Fonte: <a href="{link}" target="_blank" '
+                    f'rel="noopener">{rotulo}</a></p>'
+                )
+            conteudo = limpar_html("".join(partes)) or "<p>(sem conteúdo)</p>"
+
+            noticia = Noticia(
+                titulo=titulo,
+                slug=gerar_slug(titulo, Noticia),
+                resumo=resumo[:480],
+                conteudo=conteudo,
+                autor=fonte or "Importado",
+                publicado=False,  # entra como RASCUNHO
+            )
+            db.session.add(noticia)
+            criadas += 1
+
+        db.session.commit()
+        return render_template(
+            "importado.html",
+            criadas=criadas, ignoradas=ignoradas, total=len(titulos)
+        )
+
     @app.errorhandler(404)
     def nao_encontrado(e):
         return render_template("404.html"), 404
