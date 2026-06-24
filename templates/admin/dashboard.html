@@ -1,0 +1,53 @@
+{% extends "admin/base_admin.html" %}
+{% block titulo %}Início{% endblock %}
+
+{% block conteudo %}
+<h1 class="admin-titulo">Painel administrativo</h1>
+
+<div class="cards-stat">
+    <div class="card-stat"><div class="num">{{ total_noticias }}</div><div class="rot">Notícias</div></div>
+    <div class="card-stat"><div class="num">{{ total_julgados }}</div><div class="rot">Julgados</div></div>
+    <div class="card-stat"><div class="num">{{ total_categorias }}</div><div class="rot">Seções</div></div>
+</div>
+
+<div style="display:flex; gap:10px; margin-bottom:30px; flex-wrap:wrap;">
+    <a class="btn btn-dourado" href="{{ url_for('admin_noticia_form') }}">+ Nova notícia</a>
+    <a class="btn" href="{{ url_for('admin_julgado_form') }}">+ Novo julgado</a>
+    <a class="btn btn-sec" href="{{ url_for('admin_secoes') }}">Gerenciar seções</a>
+</div>
+
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:24px;">
+    <div>
+        <div class="secao-titulo"><h2>Últimas notícias</h2></div>
+        {% if ultimas_noticias %}
+        <table class="tabela">
+            {% for n in ultimas_noticias %}
+            <tr>
+                <td><a href="{{ url_for('admin_noticia_form', noticia_id=n.id) }}">{{ n.titulo|truncate(40) }}</a></td>
+                <td style="text-align:right;">
+                    <span class="badge {{ 'pub' if n.publicado else 'rascunho' }}">
+                        {{ 'Publicada' if n.publicado else 'Rascunho' }}</span>
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+        {% else %}<div class="vazio">Nenhuma notícia.</div>{% endif %}
+    </div>
+    <div>
+        <div class="secao-titulo"><h2>Últimos julgados</h2></div>
+        {% if ultimos_julgados %}
+        <table class="tabela">
+            {% for j in ultimos_julgados %}
+            <tr>
+                <td><a href="{{ url_for('admin_julgado_form', julgado_id=j.id) }}">{{ j.titulo|truncate(40) }}</a></td>
+                <td style="text-align:right;">
+                    <span class="badge {{ 'pub' if j.publicado else 'rascunho' }}">
+                        {{ 'Publicado' if j.publicado else 'Rascunho' }}</span>
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+        {% else %}<div class="vazio">Nenhum julgado.</div>{% endif %}
+    </div>
+</div>
+{% endblock %}

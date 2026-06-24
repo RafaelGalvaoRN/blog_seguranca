@@ -1,0 +1,39 @@
+{% extends "admin/base_admin.html" %}
+{% block titulo %}Minha conta{% endblock %}
+
+{% block conteudo %}
+<h1 class="admin-titulo">Minha conta</h1>
+
+<form method="post" class="form-card" style="max-width:520px;">
+    <div class="campo">
+        <label for="username">Nome de usuário</label>
+        <input type="text" id="username" name="username"
+               value="{{ current_user.username }}">
+        <div class="ajuda">Deixe como está se não quiser mudar o usuário.</div>
+    </div>
+
+    <hr style="border:none;border-top:1px solid var(--cinza-borda);margin:18px 0;">
+
+    <div class="campo">
+        <label for="nova_senha">Nova senha</label>
+        <input type="password" id="nova_senha" name="nova_senha"
+               placeholder="deixe em branco para não trocar">
+    </div>
+    <div class="campo">
+        <label for="confirma_senha">Confirmar nova senha</label>
+        <input type="password" id="confirma_senha" name="confirma_senha">
+    </div>
+
+    <hr style="border:none;border-top:1px solid var(--cinza-borda);margin:18px 0;">
+
+    <div class="campo">
+        <label for="senha_atual">Senha atual (obrigatória para confirmar) *</label>
+        <input type="password" id="senha_atual" name="senha_atual" required>
+    </div>
+
+    <div class="acoes-form">
+        <button class="btn" type="submit">Salvar alterações</button>
+        <a class="btn btn-sec" href="{{ url_for('admin_dashboard') }}">Voltar</a>
+    </div>
+</form>
+{% endblock %}

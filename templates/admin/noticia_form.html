@@ -1,0 +1,82 @@
+{% extends "admin/base_admin.html" %}
+{% block titulo %}{{ 'Editar' if noticia else 'Nova' }} notícia{% endblock %}
+
+{% block head_extra %}
+<link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
+{% endblock %}
+
+{% block conteudo %}
+<h1 class="admin-titulo">{{ 'Editar notícia' if noticia else 'Nova notícia' }}</h1>
+
+<form method="post" enctype="multipart/form-data" class="form-card" onsubmit="sincronizarEditores()">
+    <div class="campo">
+        <label for="titulo">Título *</label>
+        <input type="text" id="titulo" name="titulo" required
+               value="{{ noticia.titulo if noticia else '' }}">
+    </div>
+
+    <div class="campo">
+        <label for="resumo">Resumo (aparece nas listagens)</label>
+        <textarea id="resumo" name="resumo" rows="2">{{ noticia.resumo if noticia else '' }}</textarea>
+    </div>
+
+    <div class="campo">
+        <label>Conteúdo *</label>
+        <div id="editor-conteudo" class="editor">{{ noticia.conteudo|safe if noticia else '' }}</div>
+        <input type="hidden" name="conteudo" id="campo-conteudo">
+        <div class="ajuda">Use a barra de formatação acima para negrito, listas, links, etc.</div>
+    </div>
+
+    <div class="linha-2">
+        <div class="campo">
+            <label for="autor">Autor</label>
+            <input type="text" id="autor" name="autor" value="{{ noticia.autor if noticia else '' }}">
+        </div>
+        <div class="campo">
+            <label>Imagem de capa (opcional)</label>
+            {% if noticia and noticia.imagem_url %}
+            <div style="margin-bottom:8px;">
+                <img src="{{ noticia.imagem_url }}" alt="Imagem atual"
+                     style="max-height:140px; border-radius:4px; border:1px solid #ddd; display:block;">
+                <span class="ajuda">Imagem atual. Faça upload de outra para substituir.</span>
+            </div>
+            {% endif %}
+            <input type="file" id="imagem" name="imagem" accept="image/png,image/jpeg,image/gif,image/webp">
+            <div class="ajuda" style="margin-top:6px;">Ou informe uma URL externa:</div>
+            <input type="text" id="imagem_url" name="imagem_url"
+                   value="{{ noticia.imagem_url if noticia else '' }}"
+                   placeholder="https://...">
+        </div>
+    </div>
+
+    <div class="campo check-linha">
+        <input type="checkbox" id="publicado" name="publicado"
+               {{ 'checked' if (not noticia or noticia.publicado) else '' }}>
+        <label for="publicado" style="margin:0;">Publicar (visível no site)</label>
+    </div>
+
+    <div class="acoes-form">
+        <button class="btn" type="submit">Salvar</button>
+        <a class="btn btn-sec" href="{{ url_for('admin_noticias') }}">Cancelar</a>
+    </div>
+</form>
+
+<script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
+<script>
+    const opcoesBarra = [
+        ['bold', 'italic', 'underline'],
+        [{ 'header': [2, 3, false] }],
+        [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+        ['blockquote', 'link'],
+        ['clean']
+    ];
+    const editorConteudo = new Quill('#editor-conteudo', {
+        theme: 'snow', modules: { toolbar: opcoesBarra }
+    });
+    function sincronizarEditores() {
+        document.getElementById('campo-conteudo').value =
+            editorConteudo.root.innerHTML;
+        return true;
+    }
+</script>
+{% endblock %}

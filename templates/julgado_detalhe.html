@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block titulo %}{{ julgado.titulo }} — Julgados RN{% endblock %}
+
+{% block conteudo %}
+<a href="{{ url_for('julgados', secao=julgado.categoria.slug) }}" class="voltar">
+    ← Voltar para {{ julgado.categoria.nome }}
+</a>
+
+<article class="artigo">
+    <div class="meta" style="margin-bottom:10px;">
+        <span class="tag-pill">{{ julgado.categoria.nome }}</span>
+        {% if julgado.tribunal %}<span class="tag-pill cinza">{{ julgado.tribunal }}</span>{% endif %}
+    </div>
+    <h1>{{ julgado.titulo }}</h1>
+
+    <div class="ficha">
+        <dl>
+            {% if julgado.tribunal %}<dt>Tribunal</dt><dd>{{ julgado.tribunal }}</dd>{% endif %}
+            {% if julgado.numero_processo %}<dt>Processo</dt><dd>{{ julgado.numero_processo }}</dd>{% endif %}
+            {% if julgado.orgao_julgador %}<dt>Órgão julgador</dt><dd>{{ julgado.orgao_julgador }}</dd>{% endif %}
+            {% if julgado.relator %}<dt>Relator(a)</dt><dd>{{ julgado.relator }}</dd>{% endif %}
+            {% if julgado.data_julgamento %}<dt>Julgamento</dt><dd>{{ julgado.data_julgamento.strftime('%d/%m/%Y') }}</dd>{% endif %}
+        </dl>
+    </div>
+
+    {% if julgado.tese %}
+    <div class="bloco-tese">
+        <strong>Tese / Destaque</strong>
+        {{ julgado.tese|safe }}
+    </div>
+    {% endif %}
+
+    {% if julgado.ementa %}
+    <h2 style="font-size:18px;color:var(--azul);">Ementa</h2>
+    <div class="corpo">{{ julgado.ementa|safe }}</div>
+    {% endif %}
+
+    {% if julgado.conteudo %}
+    <h2 style="font-size:18px;color:var(--azul);margin-top:22px;">Inteiro teor / Comentários</h2>
+    <div class="corpo">{{ julgado.conteudo|safe }}</div>
+    {% endif %}
+
+    {% if julgado.lista_tags %}
+    <div style="margin-top:22px;">
+        {% for tag in julgado.lista_tags %}
+        <a class="tag-pill cinza" style="display:inline-block;margin:2px;"
+           href="{{ url_for('julgados', q=tag) }}">{{ tag }}</a>
+        {% endfor %}
+    </div>
+    {% endif %}
+</article>
+
+{% if relacionados %}
+<div class="secao-titulo"><h2>Julgados relacionados</h2></div>
+{% for j in relacionados %}
+<article class="card-julgado">
+    <div class="meta"><span class="tag-pill">{{ j.categoria.nome }}</span></div>
+    <h3><a href="{{ url_for('julgado_detalhe', slug=j.slug) }}">{{ j.titulo }}</a></h3>
+</article>
+{% endfor %}
+{% endif %}
+{% endblock %}

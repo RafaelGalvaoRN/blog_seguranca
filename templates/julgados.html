@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block titulo %}Julgados — Segurança Pública RN{% endblock %}
+
+{% block conteudo %}
+<div class="secao-titulo">
+    <h2>Julgados {% if categoria_atual %}— {{ categoria_atual.nome }}{% endif %}</h2>
+</div>
+
+<div class="julgados-layout">
+    <aside class="painel-filtros">
+        <h3>Seções</h3>
+        <ul class="lista-secoes">
+            <li>
+                <a href="{{ url_for('julgados') }}" class="{{ 'ativo' if not secao else '' }}">
+                    Todas
+                </a>
+            </li>
+            {% for cat in menu_categorias %}
+            <li>
+                <a href="{{ url_for('julgados', secao=cat.slug) }}"
+                   class="{{ 'ativo' if secao == cat.slug else '' }}">
+                    {{ cat.nome }}
+                    <span class="contador">{{ cat.total_julgados }}</span>
+                </a>
+            </li>
+            {% endfor %}
+        </ul>
+
+        <h3>Filtrar</h3>
+        <form class="filtro-form" action="{{ url_for('julgados') }}" method="get">
+            {% if secao %}<input type="hidden" name="secao" value="{{ secao }}">{% endif %}
+            <label for="q">Palavra-chave</label>
+            <input type="search" id="q" name="q" value="{{ busca }}"
+                   placeholder="tese, relator, processo...">
+
+            <label for="tribunal">Tribunal</label>
+            <select id="tribunal" name="tribunal">
+                <option value="">Todos</option>
+                {% for t in tribunais %}
+                <option value="{{ t }}" {{ 'selected' if tribunal == t else '' }}>{{ t }}</option>
+                {% endfor %}
+            </select>
+
+            <button type="submit">Aplicar filtros</button>
+        </form>
+        {% if busca or tribunal or secao %}
+        <a class="filtro-limpar" href="{{ url_for('julgados') }}">Limpar filtros</a>
+        {% endif %}
+    </aside>
+
+    <section>
+        {% if pagination.items %}
+            <p style="color:var(--texto-suave); font-size:14px; margin:0 0 14px;">
+                {{ pagination.total }} julgado(s) encontrado(s).
+            </p>
+            {% for j in pagination.items %}
+            <article class="card-julgado">
+                <div class="meta">
+                    <span class="tag-pill">{{ j.categoria.nome }}</span>
+                    {% if j.tribunal %}<span class="tag-pill cinza">{{ j.tribunal }}</span>{% endif %}
+                </div>
+                <h3><a href="{{ url_for('julgado_detalhe', slug=j.slug) }}">{{ j.titulo }}</a></h3>
+                {% if j.tese %}<p class="tese">{{ j.tese|striptags|truncate(220) }}</p>{% endif %}
+                <p class="infos">
+                    {% if j.numero_processo %}{{ j.numero_processo }} · {% endif %}
+                    {% if j.relator %}Rel. {{ j.relator }} · {% endif %}
+                    {% if j.data_julgamento %}{{ j.data_julgamento.strftime('%d/%m/%Y') }}{% endif %}
+                </p>
+            </article>
+            {% endfor %}
+            {% include "_paginacao.html" %}
+        {% else %}
+            <div class="vazio">Nenhum julgado encontrado com esses critérios.</div>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}

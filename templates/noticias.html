@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block titulo %}Notícias — Segurança Pública RN{% endblock %}
+
+{% block conteudo %}
+<div class="secao-titulo">
+    <h2>Notícias</h2>
+</div>
+
+<form class="busca-topo" action="{{ url_for('noticias') }}" method="get"
+      style="margin-bottom:20px; max-width:420px;">
+    <input type="search" name="q" placeholder="Buscar notícias..." value="{{ busca }}">
+    <button type="submit">Buscar</button>
+</form>
+
+{% if pagination.items %}
+<div class="grid-noticias">
+    {% for n in pagination.items %}
+    <article class="card-noticia">
+        {% if n.imagem_url %}<img src="{{ n.imagem_url }}" alt="">{% endif %}
+        <div class="card-noticia-corpo">
+            <h3><a href="{{ url_for('noticia_detalhe', slug=n.slug) }}">{{ n.titulo }}</a></h3>
+            <p>{{ n.resumo }}</p>
+            <span class="data">{{ n.criado_em.strftime('%d/%m/%Y') }}</span>
+        </div>
+    </article>
+    {% endfor %}
+</div>
+
+{% include "_paginacao.html" %}
+{% else %}
+<div class="vazio">Nenhuma notícia encontrada{% if busca %} para "{{ busca }}"{% endif %}.</div>
+{% endif %}
+{% endblock %}

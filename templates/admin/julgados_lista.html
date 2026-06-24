@@ -1,0 +1,35 @@
+{% extends "admin/base_admin.html" %}
+{% block titulo %}Julgados{% endblock %}
+
+{% block conteudo %}
+<div class="secao-titulo">
+    <h1 class="admin-titulo" style="margin:0;">Julgados</h1>
+    <a class="btn btn-dourado" href="{{ url_for('admin_julgado_form') }}">+ Novo julgado</a>
+</div>
+
+{% if julgados %}
+<table class="tabela">
+    <thead><tr><th>Título</th><th>Seção</th><th>Tribunal</th><th>Status</th><th>Ações</th></tr></thead>
+    <tbody>
+    {% for j in julgados %}
+    <tr>
+        <td>{{ j.titulo|truncate(50) }}</td>
+        <td>{{ j.categoria.nome }}</td>
+        <td>{{ j.tribunal or '—' }}</td>
+        <td><span class="badge {{ 'pub' if j.publicado else 'rascunho' }}">
+            {{ 'Publicado' if j.publicado else 'Rascunho' }}</span></td>
+        <td style="white-space:nowrap;">
+            <a class="btn btn-sec btn-pequeno" href="{{ url_for('admin_julgado_form', julgado_id=j.id) }}">Editar</a>
+            <form method="post" action="{{ url_for('admin_julgado_excluir', julgado_id=j.id) }}"
+                  style="display:inline;" onsubmit="return confirm('Excluir este julgado?');">
+                <button class="btn btn-perigo btn-pequeno" type="submit">Excluir</button>
+            </form>
+        </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<div class="vazio">Nenhum julgado cadastrado. <a href="{{ url_for('admin_julgado_form') }}">Cadastrar o primeiro</a>.</div>
+{% endif %}
+{% endblock %}

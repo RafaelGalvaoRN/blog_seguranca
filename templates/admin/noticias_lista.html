@@ -1,0 +1,34 @@
+{% extends "admin/base_admin.html" %}
+{% block titulo %}Notícias{% endblock %}
+
+{% block conteudo %}
+<div class="secao-titulo">
+    <h1 class="admin-titulo" style="margin:0;">Notícias</h1>
+    <a class="btn btn-dourado" href="{{ url_for('admin_noticia_form') }}">+ Nova notícia</a>
+</div>
+
+{% if noticias %}
+<table class="tabela">
+    <thead><tr><th>Título</th><th>Data</th><th>Status</th><th>Ações</th></tr></thead>
+    <tbody>
+    {% for n in noticias %}
+    <tr>
+        <td>{{ n.titulo }}</td>
+        <td>{{ n.criado_em.strftime('%d/%m/%Y') }}</td>
+        <td><span class="badge {{ 'pub' if n.publicado else 'rascunho' }}">
+            {{ 'Publicada' if n.publicado else 'Rascunho' }}</span></td>
+        <td style="white-space:nowrap;">
+            <a class="btn btn-sec btn-pequeno" href="{{ url_for('admin_noticia_form', noticia_id=n.id) }}">Editar</a>
+            <form method="post" action="{{ url_for('admin_noticia_excluir', noticia_id=n.id) }}"
+                  style="display:inline;" onsubmit="return confirm('Excluir esta notícia?');">
+                <button class="btn btn-perigo btn-pequeno" type="submit">Excluir</button>
+            </form>
+        </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<div class="vazio">Nenhuma notícia cadastrada. <a href="{{ url_for('admin_noticia_form') }}">Criar a primeira</a>.</div>
+{% endif %}
+{% endblock %}

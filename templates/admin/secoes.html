@@ -1,0 +1,52 @@
+{% extends "admin/base_admin.html" %}
+{% block titulo %}Seções{% endblock %}
+
+{% block conteudo %}
+<h1 class="admin-titulo">Seções dos julgados</h1>
+
+<div style="display:grid; grid-template-columns:1fr 320px; gap:24px; align-items:start;">
+    <div>
+        {% if categorias %}
+        <table class="tabela">
+            <thead><tr><th>Seção</th><th>Descrição</th><th>Julgados</th><th></th></tr></thead>
+            <tbody>
+            {% for c in categorias %}
+            <tr>
+                <td><strong>{{ c.nome }}</strong></td>
+                <td style="color:var(--texto-suave);">{{ c.descricao or '—' }}</td>
+                <td>{{ c.total_julgados }}</td>
+                <td style="text-align:right;">
+                    <form method="post" action="{{ url_for('admin_secao_excluir', cat_id=c.id) }}"
+                          onsubmit="return confirm('Excluir esta seção?');">
+                        <button class="btn btn-perigo btn-pequeno" type="submit">Excluir</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="vazio">Nenhuma seção cadastrada.</div>
+        {% endif %}
+    </div>
+
+    <div class="form-card">
+        <h3 style="margin-top:0; color:var(--azul);">Nova seção</h3>
+        <form method="post">
+            <div class="campo">
+                <label for="nome">Nome *</label>
+                <input type="text" id="nome" name="nome" required placeholder="Ex.: Interceptação telefônica">
+            </div>
+            <div class="campo">
+                <label for="descricao">Descrição</label>
+                <input type="text" id="descricao" name="descricao">
+            </div>
+            <div class="campo">
+                <label for="ordem">Ordem no menu</label>
+                <input type="text" id="ordem" name="ordem" value="0">
+            </div>
+            <button class="btn" type="submit">Adicionar seção</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

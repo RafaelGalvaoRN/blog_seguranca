@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login — Admin Segurança Pública RN</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+<div class="login-tela">
+    <div class="login-box">
+        <h1>Segurança Pública RN</h1>
+        <p class="sub">Acesso à área administrativa</p>
+
+        {% with mensagens = get_flashed_messages(with_categories=true) %}
+            {% for categoria, msg in mensagens %}
+                <div class="alerta alerta-{{ categoria }}">{{ msg }}</div>
+            {% endfor %}
+        {% endwith %}
+
+        <form method="post">
+            <div class="campo">
+                <label for="username">Usuário</label>
+                <input type="text" id="username" name="username" autofocus required>
+            </div>
+            <div class="campo">
+                <label for="senha">Senha</label>
+                <input type="password" id="senha" name="senha" required>
+            </div>
+            <button class="btn" type="submit" style="width:100%;">Entrar</button>
+        </form>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block titulo %}Painel{% endblock %} — Admin Segurança Pública RN</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block head_extra %}{% endblock %}
+</head>
+<body class="admin-body">
+<header class="admin-topo">
+    <div class="container">
+        <span class="marca">⚙ Painel Administrativo</span>
+        <nav>
+            <a href="{{ url_for('admin_dashboard') }}">Início</a>
+            <a href="{{ url_for('admin_noticias') }}">Notícias</a>
+            <a href="{{ url_for('admin_julgados') }}">Julgados</a>
+            <a href="{{ url_for('admin_secoes') }}">Seções</a>
+            <a href="{{ url_for('index') }}" target="_blank">Ver site</a>
+            <a href="{{ url_for('admin_conta') }}">Minha conta</a>
+            <a href="{{ url_for('admin_logout') }}" class="sair">Sair</a>
+        </nav>
+    </div>
+</header>
+
+<div class="admin-wrap">
+    {% with mensagens = get_flashed_messages(with_categories=true) %}
+        {% for categoria, msg in mensagens %}
+            <div class="alerta alerta-{{ categoria }}">{{ msg }}</div>
+        {% endfor %}
+    {% endwith %}
+    {% block conteudo %}{% endblock %}
+</div>
+</body>
+</html>

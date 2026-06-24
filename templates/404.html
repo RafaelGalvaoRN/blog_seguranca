@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block titulo %}Página não encontrada{% endblock %}
+{% block conteudo %}
+<div class="vazio" style="padding:60px;">
+    <h2 style="color:var(--azul);">Página não encontrada</h2>
+    <p>O conteúdo que você procura não existe ou foi removido.</p>
+    <a class="btn" href="{{ url_for('index') }}">Voltar ao início</a>
+</div>
+{% endblock %}

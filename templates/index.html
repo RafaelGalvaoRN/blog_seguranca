@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block conteudo %}
+<section class="hero">
+    <h1>Portal de Segurança Pública do RN</h1>
+    <p>Notícias e jurisprudência selecionada para apoiar o dia a dia dos
+       agentes da segurança pública do RN.</p>
+</section>
+
+<div class="secao-titulo">
+    <h2>Últimas notícias</h2>
+    <a href="{{ url_for('noticias') }}">Ver todas →</a>
+</div>
+
+{% if noticias %}
+<div class="grid-noticias">
+    {% for n in noticias %}
+    <article class="card-noticia">
+        {% if n.imagem_url %}<img src="{{ n.imagem_url }}" alt="">{% endif %}
+        <div class="card-noticia-corpo">
+            <h3><a href="{{ url_for('noticia_detalhe', slug=n.slug) }}">{{ n.titulo }}</a></h3>
+            <p>{{ n.resumo }}</p>
+            <span class="data">{{ n.criado_em.strftime('%d/%m/%Y') }}</span>
+        </div>
+    </article>
+    {% endfor %}
+</div>
+{% else %}
+<div class="vazio">Ainda não há notícias publicadas.</div>
+{% endif %}
+
+<div class="secao-titulo">
+    <h2>Julgados recentes</h2>
+    <a href="{{ url_for('julgados') }}">Ver área de julgados →</a>
+</div>
+
+{% if julgados %}
+    {% for j in julgados %}
+    <article class="card-julgado">
+        <div class="meta">
+            <span class="tag-pill">{{ j.categoria.nome }}</span>
+            {% if j.tribunal %}<span class="tag-pill cinza">{{ j.tribunal }}</span>{% endif %}
+        </div>
+        <h3><a href="{{ url_for('julgado_detalhe', slug=j.slug) }}">{{ j.titulo }}</a></h3>
+        {% if j.tese %}<p class="tese">{{ j.tese|striptags|truncate(180) }}</p>{% endif %}
+        <p class="infos">
+            {% if j.relator %}Rel. {{ j.relator }} · {% endif %}
+            {% if j.data_julgamento %}{{ j.data_julgamento.strftime('%d/%m/%Y') }}{% endif %}
+        </p>
+    </article>
+    {% endfor %}
+{% else %}
+<div class="vazio">Ainda não há julgados cadastrados.</div>
+{% endif %}
+{% endblock %}

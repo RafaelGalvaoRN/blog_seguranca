@@ -1,0 +1,123 @@
+{% extends "admin/base_admin.html" %}
+{% block titulo %}{{ 'Editar' if julgado else 'Novo' }} julgado{% endblock %}
+
+{% block head_extra %}
+<link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
+{% endblock %}
+
+{% block conteudo %}
+<h1 class="admin-titulo">{{ 'Editar julgado' if julgado else 'Novo julgado' }}</h1>
+
+<form method="post" class="form-card" onsubmit="sincronizarEditores()">
+    <div class="campo">
+        <label for="titulo">Título *</label>
+        <input type="text" id="titulo" name="titulo" required
+               value="{{ julgado.titulo if julgado else '' }}"
+               placeholder="Ex.: Busca pessoal exige fundada suspeita concreta">
+    </div>
+
+    <div class="linha-2">
+        <div class="campo">
+            <label for="categoria_id">Seção *</label>
+            <select id="categoria_id" name="categoria_id" required>
+                <option value="">— selecione —</option>
+                {% for c in categorias %}
+                <option value="{{ c.id }}"
+                    {{ 'selected' if julgado and julgado.categoria_id == c.id else '' }}>
+                    {{ c.nome }}</option>
+                {% endfor %}
+            </select>
+            <div class="ajuda">Precisa de outra seção? Crie em "Seções" no menu.</div>
+        </div>
+        <div class="campo">
+            <label for="tribunal">Tribunal</label>
+            <input type="text" id="tribunal" name="tribunal" list="lista-tribunais"
+                   value="{{ julgado.tribunal if julgado else '' }}"
+                   placeholder="STF, STJ, TJRN...">
+            <datalist id="lista-tribunais">
+                <option value="STF"><option value="STJ"><option value="TJRN">
+                <option value="TJ"><option value="TNU">
+            </datalist>
+        </div>
+    </div>
+
+    <div class="linha-3">
+        <div class="campo">
+            <label for="numero_processo">Nº do processo</label>
+            <input type="text" id="numero_processo" name="numero_processo"
+                   value="{{ julgado.numero_processo if julgado else '' }}">
+        </div>
+        <div class="campo">
+            <label for="orgao_julgador">Órgão julgador</label>
+            <input type="text" id="orgao_julgador" name="orgao_julgador"
+                   value="{{ julgado.orgao_julgador if julgado else '' }}"
+                   placeholder="6ª Turma, Plenário...">
+        </div>
+        <div class="campo">
+            <label for="data_julgamento">Data do julgamento</label>
+            <input type="date" id="data_julgamento" name="data_julgamento"
+                   value="{{ julgado.data_julgamento.isoformat() if julgado and julgado.data_julgamento else '' }}">
+        </div>
+    </div>
+
+    <div class="campo">
+        <label for="relator">Relator(a)</label>
+        <input type="text" id="relator" name="relator"
+               value="{{ julgado.relator if julgado else '' }}">
+    </div>
+
+    <div class="campo">
+        <label for="tese">Tese / Destaque</label>
+        <textarea id="tese" name="tese" rows="3"
+                  placeholder="Frase-chave que resume o entendimento.">{{ julgado.tese|striptags if julgado else '' }}</textarea>
+    </div>
+
+    <div class="campo">
+        <label>Ementa</label>
+        <div id="editor-ementa" class="editor editor-baixo">{{ julgado.ementa|safe if julgado else '' }}</div>
+        <input type="hidden" name="ementa" id="campo-ementa">
+    </div>
+
+    <div class="campo">
+        <label>Inteiro teor / Comentários (opcional)</label>
+        <div id="editor-conteudo" class="editor editor-baixo">{{ julgado.conteudo|safe if julgado else '' }}</div>
+        <input type="hidden" name="conteudo" id="campo-conteudo">
+    </div>
+
+    <div class="campo">
+        <label for="tags">Palavras-chave (separadas por vírgula)</label>
+        <input type="text" id="tags" name="tags"
+               value="{{ julgado.tags if julgado else '' }}"
+               placeholder="busca pessoal, fundada suspeita, abordagem">
+    </div>
+
+    <div class="campo check-linha">
+        <input type="checkbox" id="publicado" name="publicado"
+               {{ 'checked' if (not julgado or julgado.publicado) else '' }}>
+        <label for="publicado" style="margin:0;">Publicar (visível no site)</label>
+    </div>
+
+    <div class="acoes-form">
+        <button class="btn" type="submit">Salvar</button>
+        <a class="btn btn-sec" href="{{ url_for('admin_julgados') }}">Cancelar</a>
+    </div>
+</form>
+
+<script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
+<script>
+    const opcoesBarra = [
+        ['bold', 'italic', 'underline'],
+        [{ 'header': [3, false] }],
+        [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+        ['blockquote', 'link'],
+        ['clean']
+    ];
+    const editorEmenta = new Quill('#editor-ementa', { theme: 'snow', modules: { toolbar: opcoesBarra } });
+    const editorConteudo = new Quill('#editor-conteudo', { theme: 'snow', modules: { toolbar: opcoesBarra } });
+    function sincronizarEditores() {
+        document.getElementById('campo-ementa').value = editorEmenta.root.innerHTML;
+        document.getElementById('campo-conteudo').value = editorConteudo.root.innerHTML;
+        return true;
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block titulo %}Portal de Segurança Pública do RN{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+<header class="cabecalho">
+    <div class="container cabecalho-inner">
+        <a href="{{ url_for('index') }}" class="logo">
+            <span class="logo-escudo">●</span>
+            <span>
+                <strong>Segurança Pública RN</strong>
+                <small>Notícias e Jurisprudência</small>
+            </span>
+        </a>
+        <nav class="nav-principal">
+            <a href="{{ url_for('index') }}">Início</a>
+            <a href="{{ url_for('noticias') }}">Notícias</a>
+            <a href="{{ url_for('julgados') }}">Julgados</a>
+        </nav>
+        <form class="busca-topo" action="{{ url_for('julgados') }}" method="get">
+            <input type="search" name="q" placeholder="Buscar julgados..."
+                   value="{{ request.args.get('q', '') }}">
+            <button type="submit">Buscar</button>
+        </form>
+    </div>
+</header>
+
+<main class="container conteudo-principal">
+    {% with mensagens = get_flashed_messages(with_categories=true) %}
+        {% if mensagens %}
+            {% for categoria, msg in mensagens %}
+                <div class="alerta alerta-{{ categoria }}">{{ msg }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    {% block conteudo %}{% endblock %}
+</main>
+
+<footer class="rodape">
+    <div class="container">
+        <p><strong>Portal de Segurança Pública do RN</strong> — material de apoio
+           para agentes da segurança pública do RN.</p>
+        <p class="rodape-aviso">Os conteúdos têm caráter informativo e de estudo.
+           Sempre confira a fonte oficial dos julgados.</p>
+        <p class="rodape-admin">
+            <a href="{{ url_for('admin_dashboard') }}">Área administrativa</a>
+            &middot; © {{ ano_atual }}
+        </p>
+    </div>
+</footer>
+</body>
+</html>
