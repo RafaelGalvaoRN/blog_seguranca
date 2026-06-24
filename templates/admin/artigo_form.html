@@ -34,17 +34,20 @@
         </div>
         <div class="campo">
             <label>Imagem de capa (opcional)</label>
-            {% if artigo and artigo.imagem_url %}
+            {% set img_atual = (artigo.imagem_url if artigo else '')|imgsrc %}
+            {% if img_atual %}
             <div style="margin-bottom:8px;">
-                <img src="{{ artigo.imagem_url }}" alt="Imagem atual"
+                <img src="{{ img_atual }}" alt="Imagem atual"
                      style="max-height:140px; border-radius:4px; border:1px solid #ddd; display:block;">
                 <span class="ajuda">Imagem atual. Faça upload de outra para substituir.</span>
             </div>
+            {% else %}
+            <div class="ajuda" style="margin-bottom:8px;">Sem imagem de capa.</div>
             {% endif %}
             <input type="file" id="imagem" name="imagem" accept="image/png,image/jpeg,image/gif,image/webp">
             <div class="ajuda" style="margin-top:6px;">Ou informe uma URL externa:</div>
             <input type="text" id="imagem_url" name="imagem_url"
-                   value="{{ artigo.imagem_url if artigo else '' }}"
+                   value="{{ img_atual }}"
                    placeholder="https://...">
         </div>
     </div>

@@ -88,6 +88,16 @@ def create_app(config_class=Config):
     def load_user(user_id):
         return db.session.get(Usuario, int(user_id))
 
+    @app.template_filter("imgsrc")
+    def imgsrc(url):
+        """Retorna a URL da imagem só se for válida; senão '' (evita thumb quebrado)."""
+        if not url:
+            return ""
+        u = str(url).strip()
+        if u.lower() in ("none", "null"):
+            return ""
+        return u
+
     @app.context_processor
     def injetar_globais():
         categorias = Categoria.query.order_by(Categoria.ordem, Categoria.nome).all()

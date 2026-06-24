@@ -10,7 +10,7 @@
         {{ noticia.criado_em.strftime('%d/%m/%Y') }}
         {% if noticia.autor %} · por {{ noticia.autor }}{% endif %}
     </p>
-    {% if noticia.imagem_url %}<img class="capa" src="{{ noticia.imagem_url }}" alt="">{% endif %}
+    {% set capa = noticia.imagem_url|imgsrc %}{% if capa %}<img class="capa" src="{{ capa }}" alt="">{% endif %}
     <div class="corpo">{{ noticia.conteudo|safe }}</div>
 </article>
 
@@ -19,7 +19,7 @@
 <div class="grid-noticias">
     {% for n in relacionadas %}
     <article class="card-noticia">
-        {% if n.imagem_url %}<img src="{{ n.imagem_url }}" alt="">{% endif %}
+        {% set im = n.imagem_url|imgsrc %}{% if im %}<img src="{{ im }}" alt="">{% endif %}
         <div class="card-noticia-corpo">
             <h3><a href="{{ url_for('noticia_detalhe', slug=n.slug) }}">{{ n.titulo }}</a></h3>
             <span class="data">{{ n.criado_em.strftime('%d/%m/%Y') }}</span>

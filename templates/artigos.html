@@ -16,7 +16,7 @@
 <div class="grid-noticias">
     {% for a in pagination.items %}
     <article class="card-noticia">
-        {% if a.imagem_url %}<img src="{{ a.imagem_url }}" alt="">{% endif %}
+        {% set im = a.imagem_url|imgsrc %}{% if im %}<img src="{{ im }}" alt="">{% endif %}
         <div class="card-noticia-corpo">
             <h3><a href="{{ url_for('artigo_detalhe', slug=a.slug) }}">{{ a.titulo }}</a></h3>
             <p>{{ a.resumo }}</p>
