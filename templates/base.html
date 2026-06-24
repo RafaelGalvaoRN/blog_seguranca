@@ -20,6 +20,8 @@
             <a href="{{ url_for('index') }}">Início</a>
             <a href="{{ url_for('noticias') }}">Notícias</a>
             <a href="{{ url_for('julgados') }}">Julgados</a>
+            <a href="{{ url_for('artigos') }}">Artigos</a>
+            <a href="{{ url_for('sobre') }}">Sobre</a>
         </nav>
         <form class="busca-topo" action="{{ url_for('julgados') }}" method="get">
             <input type="search" name="q" placeholder="Buscar julgados..."

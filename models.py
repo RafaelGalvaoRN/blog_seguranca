@@ -62,6 +62,24 @@ class Noticia(db.Model):
     )
 
 
+class Artigo(db.Model):
+    """Artigo (texto autoral / doutrina) da área de Artigos."""
+    __tablename__ = "artigos"
+
+    id = db.Column(db.Integer, primary_key=True)
+    titulo = db.Column(db.String(255), nullable=False)
+    slug = db.Column(db.String(280), unique=True, nullable=False)
+    resumo = db.Column(db.String(500))
+    conteudo = db.Column(db.Text, nullable=False)
+    imagem_url = db.Column(db.String(500))
+    autor = db.Column(db.String(120))
+    publicado = db.Column(db.Boolean, default=True)
+    criado_em = db.Column(db.DateTime, default=datetime.utcnow)
+    atualizado_em = db.Column(
+        db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
+
+
 class Julgado(db.Model):
     """Julgado (jurisprudência) da área de Julgados."""
     __tablename__ = "julgados"

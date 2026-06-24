@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block titulo %}Artigos — Segurança Pública RN{% endblock %}
+
+{% block conteudo %}
+<div class="secao-titulo">
+    <h2>Artigos</h2>
+</div>
+
+<form class="busca-topo" action="{{ url_for('artigos') }}" method="get"
+      style="margin-bottom:20px; max-width:420px;">
+    <input type="search" name="q" placeholder="Buscar artigos..." value="{{ busca }}">
+    <button type="submit">Buscar</button>
+</form>
+
+{% if pagination.items %}
+<div class="grid-noticias">
+    {% for a in pagination.items %}
+    <article class="card-noticia">
+        {% if a.imagem_url %}<img src="{{ a.imagem_url }}" alt="">{% endif %}
+        <div class="card-noticia-corpo">
+            <h3><a href="{{ url_for('artigo_detalhe', slug=a.slug) }}">{{ a.titulo }}</a></h3>
+            <p>{{ a.resumo }}</p>
+            <span class="data">
+                {{ a.criado_em.strftime('%d/%m/%Y') }}
+                {% if a.autor %} · {{ a.autor }}{% endif %}
+            </span>
+        </div>
+    </article>
+    {% endfor %}
+</div>
+
+{% include "_paginacao.html" %}
+{% else %}
+<div class="vazio">Nenhum artigo encontrado{% if busca %} para "{{ busca }}"{% endif %}.</div>
+{% endif %}
+{% endblock %}

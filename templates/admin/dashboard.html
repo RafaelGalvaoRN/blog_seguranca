@@ -6,12 +6,14 @@
 
 <div class="cards-stat">
     <div class="card-stat"><div class="num">{{ total_noticias }}</div><div class="rot">Notícias</div></div>
+    <div class="card-stat"><div class="num">{{ total_artigos }}</div><div class="rot">Artigos</div></div>
     <div class="card-stat"><div class="num">{{ total_julgados }}</div><div class="rot">Julgados</div></div>
     <div class="card-stat"><div class="num">{{ total_categorias }}</div><div class="rot">Seções</div></div>
 </div>
 
 <div style="display:flex; gap:10px; margin-bottom:30px; flex-wrap:wrap;">
     <a class="btn btn-dourado" href="{{ url_for('admin_noticia_form') }}">+ Nova notícia</a>
+    <a class="btn btn-dourado" href="{{ url_for('admin_artigo_form') }}">+ Novo artigo</a>
     <a class="btn" href="{{ url_for('admin_julgado_form') }}">+ Novo julgado</a>
     <a class="btn btn-sec" href="{{ url_for('admin_secoes') }}">Gerenciar seções</a>
 </div>

@@ -24,7 +24,7 @@ from slugify import slugify
 from sqlalchemy import or_
 
 from config import Config
-from models import db, Usuario, Categoria, Noticia, Julgado
+from models import db, Usuario, Categoria, Noticia, Julgado, Artigo
 
 TAGS_PERMITIDAS = [
     "p", "br", "b", "strong", "i", "em", "u", "s", "blockquote",
@@ -149,6 +149,42 @@ def create_app(config_class=Config):
             "noticia_detalhe.html", noticia=noticia, relacionadas=relacionadas
         )
 
+    # ---- Artigos ----
+    @app.route("/artigos")
+    def artigos():
+        page = request.args.get("page", 1, type=int)
+        busca = request.args.get("q", "", type=str).strip()
+        query = Artigo.query.filter_by(publicado=True)
+        if busca:
+            termo = f"%{busca}%"
+            query = query.filter(
+                or_(Artigo.titulo.ilike(termo), Artigo.resumo.ilike(termo))
+            )
+        pagination = query.order_by(Artigo.criado_em.desc()).paginate(
+            page=page, per_page=app.config["ITEMS_PER_PAGE"], error_out=False
+        )
+        return render_template("artigos.html", pagination=pagination, busca=busca)
+
+    @app.route("/artigo/<slug>")
+    def artigo_detalhe(slug):
+        artigo = Artigo.query.filter_by(slug=slug, publicado=True).first()
+        if not artigo:
+            abort(404)
+        relacionados = (
+            Artigo.query.filter(Artigo.publicado == True, Artigo.id != artigo.id)
+            .order_by(Artigo.criado_em.desc())
+            .limit(4)
+            .all()
+        )
+        return render_template(
+            "artigo_detalhe.html", artigo=artigo, relacionados=relacionados
+        )
+
+    # ---- Sobre / Contato ----
+    @app.route("/sobre")
+    def sobre():
+        return render_template("sobre.html")
+
     @app.route("/julgados")
     def julgados():
         page = request.args.get("page", 1, type=int)
@@ -247,6 +283,7 @@ def create_app(config_class=Config):
             "admin/dashboard.html",
             total_noticias=Noticia.query.count(),
             total_julgados=Julgado.query.count(),
+            total_artigos=Artigo.query.count(),
             total_categorias=Categoria.query.count(),
             ultimas_noticias=Noticia.query.order_by(Noticia.criado_em.desc()).limit(5).all(),
             ultimos_julgados=Julgado.query.order_by(Julgado.criado_em.desc()).limit(5).all(),
@@ -310,6 +347,65 @@ def create_app(config_class=Config):
             db.session.commit()
             flash("Notícia excluída.", "ok")
         return redirect(url_for("admin_noticias"))
+
+    @app.route("/admin/artigos")
+    @login_required
+    def admin_artigos():
+        lista = Artigo.query.order_by(Artigo.criado_em.desc()).all()
+        return render_template("admin/artigos_lista.html", artigos=lista)
+
+    @app.route("/admin/artigo/novo", methods=["GET", "POST"])
+    @app.route("/admin/artigo/<int:artigo_id>/editar", methods=["GET", "POST"])
+    @login_required
+    def admin_artigo_form(artigo_id=None):
+        artigo = db.session.get(Artigo, artigo_id) if artigo_id else None
+        if artigo_id and artigo is None:
+            abort(404)
+
+        if request.method == "POST":
+            titulo = request.form.get("titulo", "").strip()
+            if not titulo:
+                flash("O título é obrigatório.", "erro")
+                return render_template("admin/artigo_form.html", artigo=artigo)
+
+            if artigo is None:
+                artigo = Artigo(slug=gerar_slug(titulo, Artigo))
+                db.session.add(artigo)
+            artigo.titulo = titulo
+            artigo.resumo = request.form.get("resumo", "").strip()
+            artigo.conteudo = limpar_html(request.form.get("conteudo", ""))
+            artigo.autor = request.form.get("autor", "").strip()
+            artigo.publicado = request.form.get("publicado") == "on"
+
+            arquivo = request.files.get("imagem")
+            if arquivo and arquivo.filename:
+                if not _extensao_permitida(arquivo.filename):
+                    flash("Formato inválido. Use PNG, JPG, GIF ou WebP.", "erro")
+                    return render_template("admin/artigo_form.html", artigo=artigo)
+                nome_seguro = secure_filename(arquivo.filename)
+                pasta = os.path.join(app.root_path, "static", "uploads")
+                arquivo.save(os.path.join(pasta, nome_seguro))
+                artigo.imagem_url = f"/static/uploads/{nome_seguro}"
+            else:
+                url_digitada = request.form.get("imagem_url", "").strip()
+                if url_digitada:
+                    artigo.imagem_url = url_digitada
+
+            db.session.commit()
+            flash("Artigo salvo com sucesso.", "ok")
+            return redirect(url_for("admin_artigos"))
+
+        return render_template("admin/artigo_form.html", artigo=artigo)
+
+    @app.route("/admin/artigo/<int:artigo_id>/excluir", methods=["POST"])
+    @login_required
+    def admin_artigo_excluir(artigo_id):
+        artigo = db.session.get(Artigo, artigo_id)
+        if artigo:
+            db.session.delete(artigo)
+            db.session.commit()
+            flash("Artigo excluído.", "ok")
+        return redirect(url_for("admin_artigos"))
 
     @app.route("/admin/julgados")
     @login_required
