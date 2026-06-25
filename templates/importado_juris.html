@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block titulo %}Importação de julgados concluída{% endblock %}
+
+{% block conteudo %}
+<div class="vazio" style="padding:50px;">
+    <h2 style="color:var(--azul);">Importação concluída</h2>
+    <p><strong>{{ criados }}</strong> julgado(s) importado(s) como
+       <strong>rascunho</strong>.
+       {% if ignorados %}
+       <br>{{ ignorados }} item(ns) já existia(m) ou estava(m) vazio(s) e foi(ram) ignorado(s).
+       {% endif %}
+    </p>
+    <p>Os julgados ainda <strong>não estão publicados</strong>. Revise cada um,
+       atribua a <strong>seção correta</strong> (foram colocados em "Importados" provisoriamente)
+       e publique pelo painel.</p>
+    <a class="btn" href="{{ url_for('admin_julgados') }}">Ir para Julgados (painel)</a>
+</div>
+{% endblock %}

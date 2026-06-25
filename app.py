@@ -566,6 +566,8 @@ def create_app(config_class=Config):
         links = request.form.getlist("link")
         resumos = request.form.getlist("resumo")
         fontes = request.form.getlist("fonte")
+        corpos = request.form.getlist("corpo")
+        imagens = request.form.getlist("imagem")
 
         criadas = 0
         ignoradas = 0
@@ -576,8 +578,9 @@ def create_app(config_class=Config):
             link = (links[i] if i < len(links) else "").strip()
             resumo = (resumos[i] if i < len(resumos) else "").strip()
             fonte = (fontes[i] if i < len(fontes) else "").strip()
+            corpo = (corpos[i] if i < len(corpos) else "").strip()
+            imagem = (imagens[i] if i < len(imagens) else "").strip()
 
-            # Evita duplicar: mesmo título ou mesmo link já importado.
             existe = None
             if link:
                 existe = Noticia.query.filter(
@@ -590,7 +593,9 @@ def create_app(config_class=Config):
                 continue
 
             partes = []
-            if resumo:
+            if corpo:
+                partes.append(corpo)
+            elif resumo:
                 partes.append(f"<p>{resumo}</p>")
             if link:
                 rotulo = fonte or link
@@ -605,8 +610,9 @@ def create_app(config_class=Config):
                 slug=gerar_slug(titulo, Noticia),
                 resumo=resumo[:480],
                 conteudo=conteudo,
+                imagem_url=(imagem or None),
                 autor=fonte or "Importado",
-                publicado=False,  # entra como RASCUNHO
+                publicado=False,
             )
             db.session.add(noticia)
             criadas += 1
@@ -615,6 +621,90 @@ def create_app(config_class=Config):
         return render_template(
             "importado.html",
             criadas=criadas, ignoradas=ignoradas, total=len(titulos)
+        )
+
+    # -------------------------------------------------------------------
+    # IMPORTAÇÃO DE JURISPRUDÊNCIA (recebe itens do buscador_juris.py)
+    # -------------------------------------------------------------------
+    @app.route("/importar_juris", methods=["POST"])
+    def importar_juris():
+        token = request.form.get("token", "")
+        esperado = app.config.get("IMPORT_TOKEN", "")
+        if not esperado or token != esperado:
+            abort(403)
+
+        tribunais   = request.form.getlist("tribunal")
+        processos   = request.form.getlist("processo")
+        classes     = request.form.getlist("classe")
+        orgaos      = request.form.getlist("orgao")
+        magistrados = request.form.getlist("magistrado")
+        htmls       = request.form.getlist("html")
+        textos      = request.form.getlist("texto")
+
+        # Categoria reservada para importações automáticas.
+        # O admin reatribui a seção definitiva ao revisar o rascunho.
+        cat = Categoria.query.filter_by(slug="importados").first()
+        if not cat:
+            cat = Categoria(
+                nome="Importados",
+                slug="importados",
+                descricao="Julgados importados automaticamente — reatribuir seção antes de publicar.",
+                ordem=99,
+            )
+            db.session.add(cat)
+            db.session.flush()
+
+        criados   = 0
+        ignorados = 0
+        total     = len(tribunais)
+
+        for i, trib in enumerate(tribunais):
+            processo  = (processos[i]   if i < len(processos)   else "").strip()
+            classe    = (classes[i]     if i < len(classes)     else "").strip()
+            orgao     = (orgaos[i]      if i < len(orgaos)      else "").strip()
+            mag       = (magistrados[i] if i < len(magistrados) else "").strip()
+            html_teor = (htmls[i]       if i < len(htmls)       else "").strip()
+            texto     = (textos[i]      if i < len(textos)      else "").strip()
+            trib      = trib.strip()
+
+            if not processo and not html_teor:
+                ignorados += 1
+                continue
+
+            if processo and Julgado.query.filter_by(numero_processo=processo).first():
+                ignorados += 1
+                continue
+
+            partes_titulo = []
+            if classe:
+                partes_titulo.append(classe)
+            if processo:
+                partes_titulo.append(processo)
+            titulo_base = " – ".join(partes_titulo) if partes_titulo else "Julgado importado"
+            if trib:
+                titulo_base = f"{titulo_base} ({trib})"
+
+            tese = texto[:500].strip() if texto else ""
+
+            julgado = Julgado(
+                titulo=titulo_base[:300],
+                slug=gerar_slug(titulo_base, Julgado),
+                categoria_id=cat.id,
+                tribunal=trib[:60]         if trib     else None,
+                numero_processo=processo[:120] if processo else None,
+                relator=mag[:160]          if mag      else None,
+                orgao_julgador=orgao[:160] if orgao    else None,
+                tese=tese,
+                conteudo=limpar_html(html_teor) or texto or "(sem conteúdo)",
+                publicado=False,
+            )
+            db.session.add(julgado)
+            criados += 1
+
+        db.session.commit()
+        return render_template(
+            "importado_juris.html",
+            criados=criados, ignorados=ignorados, total=total,
         )
 
     @app.errorhandler(404)

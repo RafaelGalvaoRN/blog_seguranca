@@ -26,6 +26,16 @@ from datetime import datetime
 
 import feedparser
 
+try:
+    import trafilatura
+except ImportError:
+    trafilatura = None  # corpo/foto ficam desativados se não estiver instalado
+
+# Buscar o corpo do texto e a foto de cada matéria (abre cada link; mais lento).
+# DESLIGADO por questão de direito autoral: ficamos só com título + resumo + link.
+# (Mude para True apenas se for usar fontes oficiais/de domínio público.)
+BUSCAR_CORPO = False
+
 # ---------------------------------------------------------------------------
 # ENVIO PARA O SITE — preencha para habilitar o botão de envio.
 # ---------------------------------------------------------------------------
@@ -51,9 +61,11 @@ ARQUIVO_SAIDA = "noticias_encontradas.html"
 _CARD_TPL = (
     '<article class="card">'
     '<label class="check"><input type="checkbox" class="sel"'
-    ' data-titulo="{at}" data-link="{al}" data-resumo="{ar}" data-fonte="{af}">'
+    ' data-titulo="{at}" data-link="{al}" data-resumo="{ar}" data-fonte="{af}"'
+    ' data-corpo="{acorpo}" data-imagem="{aimagem}">'
     ' Selecionar</label>'
-    '<div class="meta">{fonte} &middot; {data}</div>'
+    '<div class="meta">{fonte} &middot; {data}{selos}</div>'
+    '{thumb}'
     '<h3><a href="{link}" target="_blank" rel="noopener">{titulo}</a></h3>'
     '<p>{resumo}</p>'
     '<a class="fonte" href="{link}" target="_blank" rel="noopener">'
@@ -95,6 +107,8 @@ _SCRIPT_ENVIO = """
       add('link', c.dataset.link);
       add('resumo', c.dataset.resumo);
       add('fonte', c.dataset.fonte);
+      add('corpo', c.dataset.corpo || '');
+      add('imagem', c.dataset.imagem || '');
     }
     document.body.appendChild(form);
     form.submit();
@@ -122,6 +136,38 @@ def formatar_data(entry):
     return entry.get("published", entry.get("updated", ""))
 
 
+def enriquecer(link):
+    """Abre a matéria e tenta extrair o corpo (HTML simples) e a foto.
+
+    Retorna (corpo_html, imagem_url). Em caso de falha, retorna ("", "").
+    """
+    if not (BUSCAR_CORPO and trafilatura and link):
+        return "", ""
+    try:
+        baixado = trafilatura.fetch_url(link)
+        if not baixado:
+            return "", ""
+        texto = trafilatura.extract(
+            baixado, include_comments=False, include_images=False,
+            favor_recall=True, target_language="pt",
+        ) or ""
+        corpo = ""
+        for paragrafo in texto.split("\n"):
+            p = paragrafo.strip()
+            if p:
+                corpo += "<p>" + html.escape(p) + "</p>"
+        imagem = ""
+        try:
+            md = trafilatura.extract_metadata(baixado)
+            if md and getattr(md, "image", None):
+                imagem = md.image
+        except Exception:
+            pass
+        return corpo, imagem
+    except Exception:
+        return "", ""
+
+
 def coletar():
     itens = []
     vistos = set()
@@ -136,12 +182,18 @@ def coletar():
             if not link or link in vistos:
                 continue
             vistos.add(link)
+            corpo, imagem = enriquecer(link)
+            if BUSCAR_CORPO:
+                print("  + " + ("corpo/foto ok" if corpo else "sem corpo")
+                      + f" :: {e.get('title','')[:60]}")
             itens.append({
                 "fonte": nome,
                 "titulo": e.get("title", "(sem título)"),
                 "link": link,
                 "resumo": limpar_texto(e.get("summary", "")),
                 "data": formatar_data(e),
+                "corpo": corpo,
+                "imagem": imagem,
             })
     return itens
 
@@ -154,10 +206,21 @@ def gerar_html(itens):
     for i in itens:
         def esc(campo, q=False):
             return html.escape(i.get(campo, ""), quote=q)
+        selos = ""
+        if i.get("corpo"):
+            selos += ' &middot; <span style="color:#1d7a46;font-weight:600;">texto completo</span>'
+        if i.get("imagem"):
+            selos += ' &middot; <span style="color:#13315c;font-weight:600;">com foto</span>'
+        thumb = ""
+        if i.get("imagem"):
+            thumb = ('<img src="' + html.escape(i["imagem"], quote=True) + '"'
+                     ' alt="" style="max-height:120px;border-radius:6px;margin:6px 0;'
+                     'display:block;" onerror="this.style.display=\'none\'">')
         cards.append(_CARD_TPL.format(
             at=esc("titulo", True), al=esc("link", True),
             ar=esc("resumo", True), af=esc("fonte", True),
-            fonte=esc("fonte"), data=esc("data"),
+            acorpo=esc("corpo", True), aimagem=esc("imagem", True),
+            fonte=esc("fonte"), data=esc("data"), selos=selos, thumb=thumb,
             link=esc("link"), titulo=esc("titulo"), resumo=esc("resumo"),
         ))
     corpo = "\n".join(cards) if cards else "<p>Nenhuma notícia encontrada.</p>"
