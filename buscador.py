@@ -31,10 +31,15 @@ try:
 except ImportError:
     trafilatura = None  # corpo/foto ficam desativados se não estiver instalado
 
-# Buscar o corpo do texto e a foto de cada matéria (abre cada link; mais lento).
+# Buscar o corpo do texto completo de cada matéria (abre cada link; mais lento).
 # DESLIGADO por questão de direito autoral: ficamos só com título + resumo + link.
 # (Mude para True apenas se for usar fontes oficiais/de domínio público.)
 BUSCAR_CORPO = False
+
+# Buscar apenas a imagem de capa (OG image) de cada matéria.
+# Habilitado por padrão: referencia a foto no site de origem, sem copiar conteúdo.
+# Requer: pip install trafilatura
+BUSCAR_IMAGEM = True
 
 # ---------------------------------------------------------------------------
 # ENVIO PARA O SITE — preencha para habilitar o botão de envio.
@@ -137,32 +142,40 @@ def formatar_data(entry):
 
 
 def enriquecer(link):
-    """Abre a matéria e tenta extrair o corpo (HTML simples) e a foto.
+    """Abre a matéria e tenta extrair o corpo (HTML simples) e/ou a foto OG.
 
     Retorna (corpo_html, imagem_url). Em caso de falha, retorna ("", "").
     """
-    if not (BUSCAR_CORPO and trafilatura and link):
+    precisa_buscar = (BUSCAR_CORPO or BUSCAR_IMAGEM) and trafilatura and link
+    if not precisa_buscar:
         return "", ""
     try:
         baixado = trafilatura.fetch_url(link)
         if not baixado:
             return "", ""
-        texto = trafilatura.extract(
-            baixado, include_comments=False, include_images=False,
-            favor_recall=True, target_language="pt",
-        ) or ""
+
+        # Extrai corpo completo (somente se habilitado — questão de direito autoral)
         corpo = ""
-        for paragrafo in texto.split("\n"):
-            p = paragrafo.strip()
-            if p:
-                corpo += "<p>" + html.escape(p) + "</p>"
+        if BUSCAR_CORPO:
+            texto = trafilatura.extract(
+                baixado, include_comments=False, include_images=False,
+                favor_recall=True, target_language="pt",
+            ) or ""
+            for paragrafo in texto.split("\n"):
+                p = paragrafo.strip()
+                if p:
+                    corpo += "<p>" + html.escape(p) + "</p>"
+
+        # Extrai URL da imagem de capa (OG image) do metadado — sem copiar conteúdo
         imagem = ""
-        try:
-            md = trafilatura.extract_metadata(baixado)
-            if md and getattr(md, "image", None):
-                imagem = md.image
-        except Exception:
-            pass
+        if BUSCAR_IMAGEM or BUSCAR_CORPO:
+            try:
+                md = trafilatura.extract_metadata(baixado)
+                if md and getattr(md, "image", None):
+                    imagem = md.image
+            except Exception:
+                pass
+
         return corpo, imagem
     except Exception:
         return "", ""
@@ -183,9 +196,13 @@ def coletar():
                 continue
             vistos.add(link)
             corpo, imagem = enriquecer(link)
-            if BUSCAR_CORPO:
-                print("  + " + ("corpo/foto ok" if corpo else "sem corpo")
-                      + f" :: {e.get('title','')[:60]}")
+            if BUSCAR_CORPO or BUSCAR_IMAGEM:
+                status = []
+                if BUSCAR_CORPO:
+                    status.append("corpo ok" if corpo else "sem corpo")
+                if BUSCAR_IMAGEM:
+                    status.append("foto ok" if imagem else "sem foto")
+                print("  + " + " | ".join(status) + f" :: {e.get('title','')[:60]}")
             itens.append({
                 "fonte": nome,
                 "titulo": e.get("title", "(sem título)"),
