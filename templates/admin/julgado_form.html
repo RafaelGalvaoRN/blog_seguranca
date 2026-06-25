@@ -91,14 +91,9 @@
                placeholder="busca pessoal, fundada suspeita, abordagem">
     </div>
 
-    <div class="campo check-linha">
-        <input type="checkbox" id="publicado" name="publicado"
-               {{ 'checked' if (not julgado or julgado.publicado) else '' }}>
-        <label for="publicado" style="margin:0;">Publicar (visível no site)</label>
-    </div>
-
     <div class="acoes-form">
-        <button class="btn" type="submit">Salvar</button>
+        <button class="btn btn-dourado" type="submit" name="acao" value="publicar">Publicar</button>
+        <button class="btn btn-sec" type="submit" name="acao" value="salvar">Salvar rascunho</button>
         <a class="btn btn-sec" href="{{ url_for('admin_julgados') }}">Cancelar</a>
     </div>
 </form>

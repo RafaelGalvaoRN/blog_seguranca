@@ -326,7 +326,7 @@ def create_app(config_class=Config):
             noticia.resumo = request.form.get("resumo", "").strip()
             noticia.conteudo = limpar_html(request.form.get("conteudo", ""))
             noticia.autor = request.form.get("autor", "").strip()
-            noticia.publicado = request.form.get("publicado") == "on"
+            noticia.publicado = request.form.get("acao") == "publicar"
 
             arquivo = request.files.get("imagem")
             if arquivo and arquivo.filename:
@@ -343,7 +343,10 @@ def create_app(config_class=Config):
                     noticia.imagem_url = url_digitada
 
             db.session.commit()
-            flash("Notícia salva com sucesso.", "ok")
+            if noticia.publicado:
+                flash("Notícia publicada com sucesso.", "ok")
+            else:
+                flash("Notícia salva como rascunho.", "ok")
             return redirect(url_for("admin_noticias"))
 
         return render_template("admin/noticia_form.html", noticia=noticia)
@@ -385,7 +388,7 @@ def create_app(config_class=Config):
             artigo.resumo = request.form.get("resumo", "").strip()
             artigo.conteudo = limpar_html(request.form.get("conteudo", ""))
             artigo.autor = request.form.get("autor", "").strip()
-            artigo.publicado = request.form.get("publicado") == "on"
+            artigo.publicado = request.form.get("acao") == "publicar"
 
             arquivo = request.files.get("imagem")
             if arquivo and arquivo.filename:
@@ -402,7 +405,10 @@ def create_app(config_class=Config):
                     artigo.imagem_url = url_digitada
 
             db.session.commit()
-            flash("Artigo salvo com sucesso.", "ok")
+            if artigo.publicado:
+                flash("Artigo publicado com sucesso.", "ok")
+            else:
+                flash("Artigo salvo como rascunho.", "ok")
             return redirect(url_for("admin_artigos"))
 
         return render_template("admin/artigo_form.html", artigo=artigo)
@@ -455,9 +461,12 @@ def create_app(config_class=Config):
             julgado.ementa = limpar_html(request.form.get("ementa", ""))
             julgado.conteudo = limpar_html(request.form.get("conteudo", ""))
             julgado.tags = request.form.get("tags", "").strip()
-            julgado.publicado = request.form.get("publicado") == "on"
+            julgado.publicado = request.form.get("acao") == "publicar"
             db.session.commit()
-            flash("Julgado salvo com sucesso.", "ok")
+            if julgado.publicado:
+                flash("Julgado publicado com sucesso.", "ok")
+            else:
+                flash("Julgado salvo como rascunho.", "ok")
             return redirect(url_for("admin_julgados"))
 
         return render_template(

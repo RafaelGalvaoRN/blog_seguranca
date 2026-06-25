@@ -18,10 +18,12 @@ CONFIGURAÇÃO DO ENVIO (faça uma vez):
      e clique em Reload na aba Web.
   2) Aqui embaixo, preencha SITE_URL e IMPORT_TOKEN com os MESMOS valores.
 """
+import base64
 import html
 import os
 import re
 import webbrowser
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 
 import feedparser
@@ -141,6 +143,79 @@ def formatar_data(entry):
     return entry.get("published", entry.get("updated", ""))
 
 
+def resolver_redirect(link):
+    """Resolve a URL real a partir de links do Google Notícias.
+
+    Usa o pacote googlenewsdecoder como estratégia principal.
+    Requer: pip install googlenewsdecoder
+    """
+    if "news.google.com" not in link:
+        return link
+
+    # Estratégia 1: googlenewsdecoder (decodificador oficial mais confiável)
+    try:
+        from googlenewsdecoder import new_decoderv1
+        result = new_decoderv1(link)
+        if result and result.get("status") is True:
+            decoded = result.get("decoded_url", "")
+            if decoded and decoded.startswith("http") and "google.com" not in decoded:
+                return decoded
+    except ImportError:
+        pass
+    except Exception:
+        pass
+
+    # Estratégia 2: base64 decode direto (funciona para alguns formatos)
+    m = re.search(r'/articles/([^/?#\s]+)', link)
+    if m:
+        try:
+            article_id = m.group(1)
+            padded = article_id + '=' * (-len(article_id) % 4)
+            data = base64.urlsafe_b64decode(padded)
+            url_m = re.search(
+                rb'https?://(?!(?:[\w.-]*\.)?google\.)[^\x00-\x20\x7f-\xff]+',
+                data,
+            )
+            if url_m:
+                url = url_m.group(0).decode('utf-8', errors='ignore').rstrip(');,\'"')
+                if re.match(r'^https?://[^/]+\.[^/]+', url):
+                    return url
+        except Exception:
+            pass
+
+    # Estratégia 3: segue redirect HTTP e analisa o HTML da página intermediária
+    try:
+        import urllib.request
+        req = urllib.request.Request(
+            link,
+            headers={"User-Agent": (
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/124.0.0.0 Safari/537.36"
+            )},
+        )
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            final_url = resp.geturl()
+            if "google.com" not in final_url:
+                return final_url
+            html_pag = resp.read(40000).decode('utf-8', errors='ignore')
+
+        for pat in [
+            r'<link[^>]+rel=["\']canonical["\'][^>]+href=["\']([^"\']+)["\']',
+            r'<meta[^>]+property=["\']og:url["\'][^>]+content=["\']([^"\']+)["\']',
+            r'<meta[^>]+content=["\']([^"\']+)["\'][^>]+property=["\']og:url["\']',
+        ]:
+            found = re.search(pat, html_pag, re.IGNORECASE)
+            if found:
+                url = found.group(1).strip()
+                if url.startswith('http') and 'google.com' not in url:
+                    return url
+    except Exception:
+        pass
+
+    return link
+
+
 def enriquecer(link):
     """Abre a matéria e tenta extrair o corpo (HTML simples) e/ou a foto OG.
 
@@ -150,7 +225,9 @@ def enriquecer(link):
     if not precisa_buscar:
         return "", ""
     try:
-        baixado = trafilatura.fetch_url(link)
+        # Resolve redirect (ex: Google Notícias redireciona para o site original)
+        url_real = resolver_redirect(link)
+        baixado = trafilatura.fetch_url(url_real)
         if not baixado:
             return "", ""
 
@@ -182,7 +259,8 @@ def enriquecer(link):
 
 
 def coletar():
-    itens = []
+    # 1ª passagem: lê todos os feeds RSS (rápido — só texto)
+    entradas = []
     vistos = set()
     for nome, url in FEEDS:
         print(f"Lendo: {nome} ...")
@@ -195,23 +273,47 @@ def coletar():
             if not link or link in vistos:
                 continue
             vistos.add(link)
-            corpo, imagem = enriquecer(link)
-            if BUSCAR_CORPO or BUSCAR_IMAGEM:
+            entradas.append((nome, e, link))
+
+    # 2ª passagem: busca imagens/corpo em paralelo (I/O-bound → threads)
+    resultados = {}
+    if (BUSCAR_CORPO or BUSCAR_IMAGEM) and entradas:
+        print(f"\nBuscando imagens em paralelo ({len(entradas)} matérias)...")
+        MAX_WORKERS = 10
+        with ThreadPoolExecutor(max_workers=MAX_WORKERS) as ex:
+            futuros = {ex.submit(enriquecer, link): (nome, e, link)
+                       for nome, e, link in entradas}
+            concluidos = 0
+            for futuro in as_completed(futuros):
+                nome, e, link = futuros[futuro]
+                try:
+                    corpo, imagem = futuro.result()
+                except Exception:
+                    corpo, imagem = "", ""
+                resultados[link] = (corpo, imagem)
+                concluidos += 1
                 status = []
                 if BUSCAR_CORPO:
                     status.append("corpo ok" if corpo else "sem corpo")
                 if BUSCAR_IMAGEM:
                     status.append("foto ok" if imagem else "sem foto")
-                print("  + " + " | ".join(status) + f" :: {e.get('title','')[:60]}")
-            itens.append({
-                "fonte": nome,
-                "titulo": e.get("title", "(sem título)"),
-                "link": link,
-                "resumo": limpar_texto(e.get("summary", "")),
-                "data": formatar_data(e),
-                "corpo": corpo,
-                "imagem": imagem,
-            })
+                print(f"  [{concluidos}/{len(entradas)}] {' | '.join(status)} :: {e.get('title','')[:55]}")
+    else:
+        resultados = {link: ("", "") for _, _, link in entradas}
+
+    # Monta lista final preservando a ordem original dos feeds
+    itens = []
+    for nome, e, link in entradas:
+        corpo, imagem = resultados.get(link, ("", ""))
+        itens.append({
+            "fonte": nome,
+            "titulo": e.get("title", "(sem título)"),
+            "link": link,
+            "resumo": limpar_texto(e.get("summary", "")),
+            "data": formatar_data(e),
+            "corpo": corpo,
+            "imagem": imagem,
+        })
     return itens
 
 
