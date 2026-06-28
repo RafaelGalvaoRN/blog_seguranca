@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block titulo %}
+  {% if noticia %}Matéria publicada{% elif aviso %}Já publicada{% else %}Erro{% endif %}
+  — Segurança Pública RN
+{% endblock %}
+
+{% block conteudo %}
+<div style="max-width:560px;margin:60px auto;text-align:center;padding:0 20px;">
+
+  {% if noticia %}
+    {# ── Sucesso ── #}
+    <div style="font-size:56px;margin-bottom:16px;">✅</div>
+    <h2 style="color:var(--azul);margin:0 0 12px;">Matéria publicada!</h2>
+    <p style="color:#33414f;font-size:16px;margin:0 0 24px;">
+      <strong>{{ noticia.titulo }}</strong><br>
+      já está visível no site.
+    </p>
+    <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+      <a class="btn" href="{{ url_for('noticia_detalhe', slug=noticia.slug) }}">
+        Ver matéria
+      </a>
+      <a class="btn btn-sec" href="{{ url_for('admin_noticias') }}">
+        Painel de notícias
+      </a>
+    </div>
+
+  {% elif aviso %}
+    {# ── Já publicada (duplo clique) ── #}
+    <div style="font-size:56px;margin-bottom:16px;">ℹ️</div>
+    <h2 style="color:var(--azul);margin:0 0 12px;">Já publicada</h2>
+    <p style="color:#33414f;font-size:16px;margin:0 0 24px;">{{ aviso }}</p>
+    <a class="btn btn-sec" href="{{ url_for('noticias') }}">Ver notícias</a>
+
+  {% else %}
+    {# ── Erro ── #}
+    <div style="font-size:56px;margin-bottom:16px;">⚠️</div>
+    <h2 style="color:#b00;margin:0 0 12px;">Link inválido</h2>
+    <p style="color:#33414f;font-size:16px;margin:0 0 24px;">{{ erro }}</p>
+    <a class="btn btn-sec" href="{{ url_for('index') }}">Voltar ao início</a>
+  {% endif %}
+
+</div>
+{% endblock %}

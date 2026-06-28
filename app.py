@@ -16,6 +16,7 @@ import bleach
 from flask import (
     Flask, render_template, request, redirect, url_for, flash, abort
 )
+from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadSignature
 from werkzeug.utils import secure_filename
 from flask_login import (
     LoginManager, login_user, logout_user, login_required, current_user
@@ -37,6 +38,7 @@ ATRIBUTOS_PERMITIDOS = {
 }
 
 EXTENSOES_IMAGEM = {"png", "jpg", "jpeg", "gif", "webp"}
+EXPIRA_DIAS = 7   # validade dos links de aprovação por e-mail
 
 
 def _extensao_permitida(nome_arquivo):
@@ -715,6 +717,59 @@ def create_app(config_class=Config):
             "importado_juris.html",
             criados=criados, ignorados=ignorados, total=total,
         )
+
+    # -------------------------------------------------------------------
+    # APROVAÇÃO POR E-MAIL — publica notícia ao clicar no link do e-mail
+    # -------------------------------------------------------------------
+    @app.route("/aprovar/<token>")
+    def aprovar_noticia(token):
+        s = URLSafeTimedSerializer(app.config["SECRET_KEY"])
+        try:
+            dados = s.loads(
+                token, salt="aprovar-noticia", max_age=EXPIRA_DIAS * 24 * 3600
+            )
+        except SignatureExpired:
+            return render_template("aprovado.html",
+                                   erro="Link expirado. Rode o buscador_email novamente.")
+        except BadSignature:
+            return render_template("aprovado.html",
+                                   erro="Link inválido ou adulterado.")
+
+        titulo = (dados.get("t") or "").strip()
+        if not titulo:
+            return render_template("aprovado.html", erro="Dados incompletos no link.")
+
+        # Deduplicação: evita publicar a mesma matéria duas vezes
+        if Noticia.query.filter_by(titulo=titulo).first():
+            return render_template("aprovado.html",
+                                   aviso="Esta matéria já foi publicada anteriormente.")
+
+        resumo    = dados.get("r", "")
+        link_orig = dados.get("l", "")
+        fonte     = dados.get("f", "")
+        imagem    = dados.get("i", "") or None
+
+        conteudo = f"<p>{resumo}</p>"
+        if link_orig:
+            fonte_label = fonte or link_orig
+            conteudo += (
+                f'<p>Fonte: <a href="{link_orig}" target="_blank" '
+                f'rel="noopener">{fonte_label}</a></p>'
+            )
+
+        noticia = Noticia(
+            titulo=titulo,
+            slug=gerar_slug(titulo, Noticia),
+            resumo=resumo,
+            conteudo=limpar_html(conteudo),
+            imagem_url=imagem,
+            autor=fonte or "Importado",
+            publicado=True,
+        )
+        db.session.add(noticia)
+        db.session.commit()
+
+        return render_template("aprovado.html", noticia=noticia)
 
     @app.errorhandler(404)
     def nao_encontrado(e):
