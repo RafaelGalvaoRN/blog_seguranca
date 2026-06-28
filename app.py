@@ -104,10 +104,11 @@ def create_app(config_class=Config):
         response.headers["Permissions-Policy"] = "geolocation=(), microphone=()"
         response.headers["Content-Security-Policy"] = (
             "default-src 'self'; "
-            "script-src 'self' 'unsafe-eval' https://cdn.quilljs.com; "
-            "style-src 'self' 'unsafe-inline' https://cdn.quilljs.com; "
+            "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://cdn.quilljs.com https://cdn.jsdelivr.net; "
+            "style-src 'self' 'unsafe-inline' https://cdn.quilljs.com https://cdn.jsdelivr.net; "
             "img-src 'self' data: https:; "
-            "font-src 'self' https://cdn.quilljs.com; "
+            "font-src 'self' https://cdn.quilljs.com https://cdn.jsdelivr.net; "
+            "worker-src 'self' blob:; "
             "connect-src 'self';"
         )
         return response
