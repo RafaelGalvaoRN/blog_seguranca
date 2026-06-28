@@ -109,7 +109,7 @@ def create_app(config_class=Config):
             "img-src 'self' data: https:; "
             "font-src 'self' https://cdn.quilljs.com https://cdn.jsdelivr.net; "
             "worker-src 'self' blob:; "
-            "connect-src 'self';"
+            "connect-src 'self' https://cdn.quilljs.com https://cdn.jsdelivr.net;"
         )
         return response
 
