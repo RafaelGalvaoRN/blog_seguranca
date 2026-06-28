@@ -5,6 +5,7 @@
 <h1 class="admin-titulo">Minha conta</h1>
 
 <form method="post" class="form-card" style="max-width:520px;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <div class="campo">
         <label for="username">Nome de usuário</label>
         <input type="text" id="username" name="username"

@@ -1,0 +1,56 @@
+[28/06/2026 08:00] buscador_email iniciado
+
+Coletando notícias...
+  Lendo: Google Notícias — Segurança Pública RN ...
+  Lendo: Google Notícias — Polícia RN ...
+  Lendo: Google Notícias — Segurança Pública (Brasil) ...
+
+  Buscando imagens (43 matérias em paralelo)...
+    [1/43] sem foto :: FIERN prestigia comemorações pelos 192 anos da Polícia 
+    [2/43] foto ok :: Janja chega hoje ao RN para agenda política e debate so
+    [3/43] foto ok :: MJSP investe mais de R$ 6,4 milhões no fortalecimento d
+    [4/43] foto ok :: Rio Grande do Norte adere ao Pacto Brasil contra o Femi
+    [5/43] sem foto :: Portal do Governo do Estado do Rio Grande do Norte - Go
+    [6/43] foto ok :: Francisco do PT destaca obras viárias e investimentos e
+    [7/43] sem foto :: Ministério da Justiça e Governo do RN lançam segunda fa
+    [8/43] foto ok :: Sistema Único de Segurança Pública será debatido no RN,
+    [9/43] foto ok :: Governadora inaugura novo Regimento de Polícia Montada 
+    [10/43] sem foto :: Levantamento aponta fragilidades na gestão de dados da 
+    [11/43] foto ok :: Janja participa de evento em Natal amanhã - Blog do Bar
+    [12/43] foto ok :: Isolda Dantas defende atuação do Governo do Estado na á
+    [13/43] foto ok :: Ministra Márcia Lopes participa de ato do Pacto Rio Gra
+    [14/43] foto ok :: Megaoperação da Polícia Civil prende líder de facção e 
+    [15/43] foto ok :: PRF ministra palestra sobre Policiamento Orientado por 
+    [16/43] foto ok :: Suspeito de homicídio no interior do RN é preso em SP q
+    [17/43] foto ok :: Ezequiel Ferreira recebe representantes da ASPERN e apr
+    [18/43] foto ok :: Condenado por atropelar e matar 19 foliões no Carnaval 
+    [19/43] foto ok :: Concursos Policiais 2026: confira editais para a carrei
+    [20/43] sem foto :: Em Porto Belo, Polícia Civil prende foragido integrante
+    [21/43] foto ok :: Tragédia do Baldo: condenado é preso no Mato Grosso apó
+    [22/43] foto ok :: PF atua contra crimes de abuso sexual infantojuvenil no
+    [23/43] foto ok :: Condenado pela Tragédia do Baldo é preso após 42 anos -
+    [24/43] foto ok :: STF mantém suspensão de concurso para a Polícia Militar
+    [25/43] foto ok :: Concurso Polícia Penal RN: 260 vagas; inscrições aberta
+    [26/43] foto ok :: Operação desarticula esquema interestadual que aplicava
+    [27/43] foto ok :: Instituto de Segurança Pública aponta queda dos roubos 
+    [28/43] foto ok :: Motorista da 'Tragédia do Baldo' é preso em MT 42 anos 
+    [29/43] foto ok :: Governo Federal inicia nova fase do Programa Celular Se
+    [30/43] foto ok :: Tecnologia a serviço da segurança - Estadão
+    [31/43] foto ok :: Polícia prende em Cuiabá motorista de ônibus que atrope
+    [32/43] foto ok :: Segurança pública exige cooperação, diz procuradora-ger
+    [33/43] foto ok :: Governo de São Paulo entrega viaturas, fuzis e inaugura
+    [34/43] foto ok :: Senasp abre inscrições para MBA em Gestão e Governança 
+    [35/43] foto ok :: Prefeitura de Cuiabá reafirma apoio à Polícia Militar d
+    [36/43] foto ok :: Polícia Militar participa da inauguração do primeiro To
+    [37/43] foto ok :: Governo Lula faz 12 mil prisões e impõe prejuízo de R$ 
+    [38/43] foto ok :: Celulares roubados em São Paulo são recuperados no Rio 
+    [39/43] foto ok :: Primeira mulher comandante da APMES ministra palestra s
+    [40/43] foto ok :: Segurança pública e fundo imobiliário são destaque na A
+    [41/43] foto ok :: Paraná recebe projeto Defensoras Populares e conclui im
+    [42/43] sem foto :: Presidência do TRT-15 recebe visita de representantes d
+    [43/43] foto ok :: Governo de SP amplia investimentos em segurança na Baix
+
+Preparando e-mail com 43 matéria(s)...
+Erro ao enviar e-mail: 'charmap' codec can't encode character '\u2713' in position 46: character maps to <undefined>
+
+Concluído em 21s.

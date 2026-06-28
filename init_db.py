@@ -41,6 +41,12 @@ def _migrar_colunas(engine):
             ))
             conn.commit()
             print("Migração: coluna imagem_url adicionada à tabela noticias.")
+        if "url_origem" not in cols:
+            conn.execute(text(
+                "ALTER TABLE noticias ADD COLUMN url_origem VARCHAR(500)"
+            ))
+            conn.commit()
+            print("Migração: coluna url_origem adicionada à tabela noticias.")
 
 
 def main():

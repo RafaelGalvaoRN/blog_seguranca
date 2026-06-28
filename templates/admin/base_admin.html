@@ -19,7 +19,12 @@
             <a href="{{ url_for('admin_secoes') }}">Seções</a>
             <a href="{{ url_for('index') }}" target="_blank">Ver site</a>
             <a href="{{ url_for('admin_conta') }}">Minha conta</a>
-            <a href="{{ url_for('admin_logout') }}" class="sair">Sair</a>
+            <form method="post" action="{{ url_for('admin_logout') }}" style="display:inline;margin:0;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="sair"
+                        style="background:none;border:none;cursor:pointer;padding:0;
+                               font:inherit;color:inherit;text-decoration:underline;">Sair</button>
+            </form>
         </nav>
     </div>
 </header>

@@ -27,6 +27,9 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 
 import feedparser
+from dotenv import load_dotenv
+
+load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env"))
 
 try:
     import trafilatura
@@ -46,8 +49,8 @@ BUSCAR_IMAGEM = True
 # ---------------------------------------------------------------------------
 # ENVIO PARA O SITE — preencha para habilitar o botão de envio.
 # ---------------------------------------------------------------------------
-SITE_URL = "https://rafaelgalvao.pythonanywhere.com"   # endereço do seu site
-IMPORT_TOKEN = "spRN_9fK2mQ7xZ4tB6vL1nP8wD3yH5cJ0aE"   # cole aqui o MESMO token definido no .env do servidor
+SITE_URL = os.getenv("SITE_URL", "")        # defina no .env: SITE_URL=https://...
+IMPORT_TOKEN = os.getenv("IMPORT_TOKEN", "")  # defina no .env: IMPORT_TOKEN=...
 
 # ---------------------------------------------------------------------------
 # FONTES — edite esta lista. Formato: ("Nome da fonte", "URL do RSS")

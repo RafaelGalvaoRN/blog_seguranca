@@ -21,6 +21,7 @@
             <a class="btn btn-sec btn-pequeno" href="{{ url_for('admin_noticia_form', noticia_id=n.id) }}">Editar</a>
             <form method="post" action="{{ url_for('admin_noticia_excluir', noticia_id=n.id) }}"
                   style="display:inline;" onsubmit="return confirm('Excluir esta notícia?');">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <button class="btn btn-perigo btn-pequeno" type="submit">Excluir</button>
             </form>
         </td>

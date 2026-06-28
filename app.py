@@ -9,13 +9,18 @@ Como rodar:
     python init_db.py     # cria o banco e os dados iniciais (só na 1ª vez)
     python app.py         # inicia o servidor em http://localhost:5000
 """
+import html
 import os
+import uuid
 from datetime import datetime
 
 import bleach
 from flask import (
     Flask, render_template, request, redirect, url_for, flash, abort
 )
+from flask_wtf.csrf import CSRFProtect
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadSignature
 from werkzeug.utils import secure_filename
 from flask_login import (
@@ -23,6 +28,9 @@ from flask_login import (
 )
 from slugify import slugify
 from sqlalchemy import or_
+
+csrf = CSRFProtect()
+limiter = Limiter(key_func=get_remote_address, default_limits=[])
 
 from config import Config
 from models import db, Usuario, Categoria, Noticia, Julgado, Artigo
@@ -79,12 +87,30 @@ def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
     db.init_app(app)
+    csrf.init_app(app)
+    limiter.init_app(app)
     os.makedirs(os.path.join(app.root_path, "static", "uploads"), exist_ok=True)
 
     login_manager = LoginManager()
     login_manager.login_view = "admin_login"
     login_manager.login_message = "Faça login para acessar o painel."
     login_manager.init_app(app)
+
+    @app.after_request
+    def security_headers(response):
+        response.headers["X-Frame-Options"] = "SAMEORIGIN"
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["Permissions-Policy"] = "geolocation=(), microphone=()"
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self'; "
+            "script-src 'self' https://cdn.quilljs.com; "
+            "style-src 'self' 'unsafe-inline' https://cdn.quilljs.com; "
+            "img-src 'self' data: https:; "
+            "font-src 'self'; "
+            "connect-src 'self';"
+        )
+        return response
 
     @login_manager.user_loader
     def load_user(user_id):
@@ -97,6 +123,8 @@ def create_app(config_class=Config):
             return ""
         u = str(url).strip()
         if u.lower() in ("none", "null"):
+            return ""
+        if not u.startswith(("http://", "https://", "/")):
             return ""
         return u
 
@@ -269,6 +297,7 @@ def create_app(config_class=Config):
         )
 
     @app.route("/admin/login", methods=["GET", "POST"])
+    @limiter.limit("10 per minute", error_message="Muitas tentativas. Aguarde 1 minuto.")
     def admin_login():
         if current_user.is_authenticated:
             return redirect(url_for("admin_dashboard"))
@@ -282,7 +311,7 @@ def create_app(config_class=Config):
             flash("Usuário ou senha inválidos.", "erro")
         return render_template("admin/login.html")
 
-    @app.route("/admin/logout")
+    @app.route("/admin/logout", methods=["POST"])
     @login_required
     def admin_logout():
         logout_user()
@@ -335,7 +364,8 @@ def create_app(config_class=Config):
                 if not _extensao_permitida(arquivo.filename):
                     flash("Formato inválido. Use PNG, JPG, GIF ou WebP.", "erro")
                     return render_template("admin/noticia_form.html", noticia=noticia)
-                nome_seguro = secure_filename(arquivo.filename)
+                ext = secure_filename(arquivo.filename).rsplit(".", 1)[1].lower()
+                nome_seguro = f"{uuid.uuid4().hex}.{ext}"
                 pasta = os.path.join(app.root_path, "static", "uploads")
                 arquivo.save(os.path.join(pasta, nome_seguro))
                 noticia.imagem_url = f"/static/uploads/{nome_seguro}"
@@ -397,7 +427,8 @@ def create_app(config_class=Config):
                 if not _extensao_permitida(arquivo.filename):
                     flash("Formato inválido. Use PNG, JPG, GIF ou WebP.", "erro")
                     return render_template("admin/artigo_form.html", artigo=artigo)
-                nome_seguro = secure_filename(arquivo.filename)
+                ext = secure_filename(arquivo.filename).rsplit(".", 1)[1].lower()
+                nome_seguro = f"{uuid.uuid4().hex}.{ext}"
                 pasta = os.path.join(app.root_path, "static", "uploads")
                 arquivo.save(os.path.join(pasta, nome_seguro))
                 artigo.imagem_url = f"/static/uploads/{nome_seguro}"
@@ -567,6 +598,7 @@ def create_app(config_class=Config):
     # IMPORTAÇÃO (recebe itens do buscador → cria notícias como RASCUNHO)
     # -------------------------------------------------------------------
     @app.route("/importar", methods=["POST"])
+    @csrf.exempt
     def importar():
         token = request.form.get("token", "")
         esperado = app.config.get("IMPORT_TOKEN", "")
@@ -638,6 +670,7 @@ def create_app(config_class=Config):
     # IMPORTAÇÃO DE JURISPRUDÊNCIA (recebe itens do buscador_juris.py)
     # -------------------------------------------------------------------
     @app.route("/importar_juris", methods=["POST"])
+    @csrf.exempt
     def importar_juris():
         token = request.form.get("token", "")
         esperado = app.config.get("IMPORT_TOKEN", "")
@@ -771,6 +804,127 @@ def create_app(config_class=Config):
 
         return render_template("aprovado.html", noticia=noticia)
 
+
+    # -------------------------------------------------------------------
+    # APROVAÇÃO DE JURISPRUDÊNCIA POR E-MAIL — publica julgado via link
+    # -------------------------------------------------------------------
+    @app.route("/aprovar_juris/<token>")
+    def aprovar_juris(token):
+        s = URLSafeTimedSerializer(app.config["SECRET_KEY"])
+        try:
+            dados = s.loads(token, salt="aprovar-juris", max_age=604800)
+        except (SignatureExpired, BadSignature):
+            return "Link inválido ou expirado.", 400
+
+        existente = Julgado.query.filter_by(
+            numero_processo=dados["numero_processo"]
+        ).first()
+        if existente:
+            return render_template(
+                "aprovado.html",
+                mensagem="Esta jurisprudência já está cadastrada no site.",
+            )
+
+        cat = Categoria.query.filter_by(nome=dados["secao_nome"]).first()
+        if not cat:
+            cat = Categoria.query.filter_by(nome="Importados").first()
+
+        base_slug = slugify(dados["numero_processo"])
+        slug = base_slug
+        contador = 1
+        while Julgado.query.filter_by(slug=slug).first():
+            slug = f"{base_slug}-{contador}"
+            contador += 1
+
+        titulo = (
+            f"{dados['classe_judicial']} — {dados['numero_processo']}"
+            if dados.get("classe_judicial")
+            else dados["numero_processo"]
+        )
+
+        novo = Julgado(
+            titulo=titulo,
+            slug=slug,
+            categoria_id=cat.id if cat else None,
+            tribunal=dados.get("tribunal", ""),
+            numero_processo=dados["numero_processo"],
+            relator=dados.get("magistrado", ""),
+            orgao_julgador=dados.get("orgao_julgador", ""),
+            tese=limpar_html(dados.get("tese", "")),
+            ementa=limpar_html(dados.get("ementa", "")),
+            conteudo=limpar_html(dados.get("conteudo", "")),
+            tags=dados.get("secao_nome", ""),
+            publicado=True,
+        )
+        db.session.add(novo)
+        db.session.commit()
+        return render_template(
+            "aprovado.html",
+            mensagem="Jurisprudência publicada com sucesso!",
+        )
+
+    # -------------------------------------------------------------------
+    # VISUALIZAÇÃO DO INTEIRO TEOR — exibe o texto antes de publicar
+    # -------------------------------------------------------------------
+    @app.route("/ver_juris/<token>")
+    def ver_juris(token):
+        s = URLSafeTimedSerializer(app.config["SECRET_KEY"])
+        try:
+            dados = s.loads(token, salt="aprovar-juris", max_age=604800)
+        except SignatureExpired:
+            return "<p>Link expirado.</p>", 400
+        except BadSignature:
+            return "<p>Link inv&aacute;lido.</p>", 400
+
+        proc     = html.escape(dados.get("numero_processo", "") or "")
+        orgao    = html.escape(dados.get("orgao_julgador", "") or "")
+        relator  = html.escape(dados.get("magistrado", "") or "")
+        classe   = html.escape(dados.get("classe_judicial", "") or "")
+        conteudo = html.escape(dados.get("conteudo", "") or "")
+        link_publicar = f"/aprovar_juris/{token}"
+
+        meta_parts = []
+        if classe:
+            meta_parts.append(classe)
+        if orgao:
+            meta_parts.append(orgao)
+        if relator:
+            meta_parts.append(f"Rel. {relator}")
+        meta_str = " &middot; ".join(meta_parts)
+
+        return f"""<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Inteiro Teor &mdash; {proc}</title>
+  <style>
+    body {{{{ font-family: Segoe UI, Arial, sans-serif; background: #f4f6f9; margin: 0; padding: 24px 16px; }}}}
+    .card {{{{ background: #fff; border: 1px solid #d9dee6; border-radius: 8px; padding: 24px; max-width: 800px; margin: 0 auto; }}}}
+    h1 {{{{ color: #0b2545; font-size: 20px; margin: 0 0 8px; }}}}
+    .meta {{{{ color: #5a6675; font-size: 13px; margin-bottom: 16px; }}}}
+    .conteudo {{{{ white-space: pre-wrap; font-size: 14px; line-height: 1.7; color: #33414f;
+                 border-top: 1px solid #e5e9f0; padding-top: 16px; margin-top: 16px; }}}}
+    .btns {{{{ margin-top: 24px; display: flex; gap: 12px; flex-wrap: wrap; }}}}
+    a.btn {{{{ display: inline-block; padding: 10px 20px; border-radius: 6px;
+             font-weight: 700; font-size: 14px; text-decoration: none; }}}}
+    a.btn-voltar {{{{ background: #5a6675; color: #fff; }}}}
+    a.btn-publicar {{{{ background: #b8860b; color: #fff; }}}}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Processo {proc}</h1>
+    <div class="meta">{meta_str}</div>
+    <div class="conteudo">{conteudo}</div>
+    <div class="btns">
+      <a class="btn btn-voltar" href="javascript:history.back()">&#8592; Voltar</a>
+      <a class="btn btn-publicar" href="{link_publicar}">&#10003; Publicar esta jurisprud&ecirc;ncia</a>
+    </div>
+  </div>
+</body>
+</html>"""
+
     @app.errorhandler(404)
     def nao_encontrado(e):
         return render_template("404.html"), 404
@@ -781,4 +935,5 @@ def create_app(config_class=Config):
 app = create_app()
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5000)
+    debug = os.environ.get("FLASK_DEBUG", "0") == "1"
+    app.run(debug=debug, port=5000)

@@ -54,6 +54,7 @@ class Noticia(db.Model):
     resumo = db.Column(db.String(500))
     conteudo = db.Column(db.Text, nullable=False)
     imagem_url = db.Column(db.String(500))
+    url_origem = db.Column(db.String(500))   # URL da matéria na fonte original
     autor = db.Column(db.String(120))
     publicado = db.Column(db.Boolean, default=True)
     criado_em = db.Column(db.DateTime, default=datetime.utcnow)

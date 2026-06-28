@@ -1,0 +1,31 @@
+ÒXITO: a tarefa agendada "BuscadorEmailBlogSeguranca" foi criada corretamente.
+
+Pasta: \
+Nome do host:                                            DESKTOP-C5KDKK3
+Nome da tarefa:                                          \BuscadorEmailBlogSeguranca
+Hora da pr¢xima execu‡Æo:                                28/06/2026 08:00:00
+Status:                                                  Pronto
+Modo de Logon:                                           Interativo apenas
+Hor rio da £ltima execu‡Æo:                              30/11/1999 00:00:00
+éltimo resultado:                                        267011
+Autor:                                                   DESKTOP-C5KDKK3\User
+Tarefa a ser executada:                                  "C:\Users\User\PycharmProjects\blog_seguranca\run_buscador_email.bat" 
+Iniciar em:                                              N/A
+Coment rio:                                              N/A
+Estado de tarefa agendada:                               Habilitado
+Tempo Ocioso:                                            Desativado
+Gerenciamento de Energia:                                Parar se estiver usando baterias, NÆo iniciar se estiver usando baterias
+Executar como Usu rio:                                   User
+Excluir tarefa se nÆo for reagendada:                    Desativado
+Interromper tarefa se for executada X horas e X minutos: 72:00:00
+Agendar:                                                 O agendamento de dados nÆo est  dispon¡vel neste formato.
+Tipo de Agendamento:                                     Di rio 
+Hora de in¡cio:                                          08:00:00
+Data de in¡cio:                                          27/06/2026
+Data de t‚rmino:                                         N/A
+Dias:                                                    A cada 1 dia(s)
+Meses:                                                   N/A
+Repetir: a cada:                                         Desativado
+Repetir: at‚: hor rio:                                   Desativado
+Repetir: at‚: dura‡Æo:                                   Desativado
+Repetir: parar se ainda estiver em execu‡Æo:             Desativado

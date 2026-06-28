@@ -42,7 +42,7 @@ try:
 except ImportError:
     new_decoderv1 = None
 
-load_dotenv()
+load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env"))
 
 # ── Configuração ──────────────────────────────────────────────────────────────
 SITE_URL    = os.getenv("SITE_URL", "https://rafaelgalvao.pythonanywhere.com")
@@ -165,10 +165,23 @@ def enriquecer(link):
     return ""
 
 
+def _publicado_hoje(entry):
+    """Retorna True se a entrada foi publicada hoje (ou se não tem data)."""
+    pub = getattr(entry, "published_parsed", None)
+    if not pub:
+        return True  # sem data → inclui por precaução
+    try:
+        pub_date = datetime(*pub[:3]).date()
+        return pub_date == datetime.now().date()
+    except Exception:
+        return True
+
+
 def coletar():
-    """Lê os feeds RSS e busca imagens em paralelo."""
+    """Lê os feeds RSS e busca imagens em paralelo. Retorna apenas matérias de hoje."""
     entradas = []
     vistos = set()
+    ignoradas_data = 0
     for nome, url in FEEDS:
         print(f"  Lendo: {nome} ...")
         feed = feedparser.parse(url)
@@ -179,8 +192,13 @@ def coletar():
             link = e.get("link", "")
             if not link or link in vistos:
                 continue
+            if not _publicado_hoje(e):
+                ignoradas_data += 1
+                continue
             vistos.add(link)
             entradas.append((nome, e, link))
+    if ignoradas_data:
+        print(f"  ({ignoradas_data} matéria(s) de dias anteriores ignorada(s))")
 
     if not entradas:
         return []

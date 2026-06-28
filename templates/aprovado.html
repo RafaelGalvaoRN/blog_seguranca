@@ -1,14 +1,17 @@
 {% extends "base.html" %}
 {% block titulo %}
-  {% if noticia %}Matéria publicada{% elif aviso %}Já publicada{% else %}Erro{% endif %}
-  — Segurança Pública RN
+  {% if noticia %}Matéria publicada
+  {% elif mensagem %}Publicado
+  {% elif aviso %}Já publicada
+  {% else %}Erro
+  {% endif %} — Segurança Pública RN
 {% endblock %}
 
 {% block conteudo %}
 <div style="max-width:560px;margin:60px auto;text-align:center;padding:0 20px;">
 
   {% if noticia %}
-    {# ── Sucesso ── #}
+    {# ── Notícia publicada com sucesso ── #}
     <div style="font-size:56px;margin-bottom:16px;">✅</div>
     <h2 style="color:var(--azul);margin:0 0 12px;">Matéria publicada!</h2>
     <p style="color:#33414f;font-size:16px;margin:0 0 24px;">
@@ -22,6 +25,15 @@
       <a class="btn btn-sec" href="{{ url_for('admin_noticias') }}">
         Painel de notícias
       </a>
+    </div>
+
+  {% elif mensagem %}
+    {# ── Sucesso genérico (jurisprudência, etc.) ── #}
+    <div style="font-size:56px;margin-bottom:16px;">✅</div>
+    <h2 style="color:var(--azul);margin:0 0 12px;">{{ mensagem }}</h2>
+    <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+      <a class="btn" href="{{ url_for('julgados') }}">Ver julgados</a>
+      <a class="btn btn-sec" href="{{ url_for('admin_julgados') }}">Painel de julgados</a>
     </div>
 
   {% elif aviso %}

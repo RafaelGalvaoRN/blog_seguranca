@@ -9,6 +9,7 @@
 <h1 class="admin-titulo">{{ 'Editar artigo' if artigo else 'Novo artigo' }}</h1>
 
 <form method="post" enctype="multipart/form-data" class="form-card" onsubmit="sincronizarEditores()">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <div class="campo">
         <label for="titulo">Título *</label>
         <input type="text" id="titulo" name="titulo" required
