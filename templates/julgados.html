@@ -60,7 +60,7 @@
                     {% if j.tribunal %}<span class="tag-pill cinza">{{ j.tribunal }}</span>{% endif %}
                 </div>
                 <h3><a href="{{ url_for('julgado_detalhe', slug=j.slug) }}">{{ j.titulo }}</a></h3>
-                {% if j.tese %}<p class="tese">{{ j.tese|striptags|truncate(220) }}</p>{% endif %}
+                {% if j.tese %}<p class="tese">{{ j.tese|striptags }}</p>{% endif %}
                 <p class="infos">
                     {% if j.numero_processo %}{{ j.numero_processo }} · {% endif %}
                     {% if j.relator %}Rel. {{ j.relator }} · {% endif %}
