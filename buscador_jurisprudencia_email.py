@@ -55,7 +55,7 @@ OLLAMA_MODEL  = os.getenv("OLLAMA_MODEL", "gemma4:12b")
 OLLAMA_URL    = "http://localhost:11434"
 
 EXPIRA_DIAS   = 7
-MAX_RESULTADOS = 15
+MAX_RESULTADOS = 5
 
 SECOES = [
     "Busca e Apreensão",
@@ -227,9 +227,9 @@ def gerar_token(item, secao_nome):
         "magistrado":       (item.get("magistrado") or "")[:160],
         "classe_judicial":  (item.get("classe_judicial") or "")[:80],
         "secao_nome":       secao_nome,
-        "tese":             teor[:300],
-        "ementa":           teor[300:1000],
-        "conteudo":         teor[:3000],
+        "tese":             teor[:1000],   # ementa/resumo → campo Tese/Destaque
+        "ementa":           teor[:1000],   # idem no campo Ementa
+        "conteudo":         teor[:8000],   # inteiro teor (limite para URL não estourar)
     }
     return s.dumps(dados, salt="aprovar-juris")
 
@@ -276,7 +276,7 @@ def gerar_html_email(itens, secao_nome, expressoes=None):
   <div style="margin-top:12px;border-top:1px solid #e0e0e0;padding-top:10px;">
     <p style="margin:0 0 6px 0;color:#1a3a5c;font-weight:bold;font-size:13px;">&#128196; Inteiro teor</p>
     <div style="background:#f8f8f8;border:1px solid #ddd;border-radius:6px;padding:14px;white-space:pre-wrap;font-size:12px;line-height:1.6;color:#333;">
-{html.escape(teor[:3000])}
+{html.escape(teor[:3000])}{"…" if len(teor) > 3000 else ""}
     </div>
   </div>
 </div>"""
